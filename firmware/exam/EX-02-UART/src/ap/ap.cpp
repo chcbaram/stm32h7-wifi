@@ -20,6 +20,11 @@ void apMain(void)
       pre_time = millis();
       ledToggle(_DEF_LED1);
     }    
+
+    if (uartAvailable(_DEF_UART1))
+    {
+      uartPrintf(0, "rx : 0x%02X\n", uartRead(_DEF_UART1));
+    }
   }
 }
 
