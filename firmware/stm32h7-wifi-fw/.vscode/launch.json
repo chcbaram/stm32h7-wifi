@@ -35,6 +35,11 @@
       "osx": {
         "serverpath": "/Applications/STMicroelectronics/STM32CubeIDE.app/Contents/Eclipse/plugins/com.st.stm32cube.ide.mcu.externaltools.stlink-gdb-server.macos64_2.0.400.202209281104/tools/bin/ST-LINK_gdbserver"
       },
+      "windows": {
+        "serverpath": "C:/ST/STM32CubeCLT/STLink-gdb-server/bin/ST-LINK_gdbserver.exe",
+        "stm32cubeprogrammer": "C:/ST/STM32CubeCLT/STM32CubeProgrammer/bin",
+        "svdFile": "C:/ST/STM32CubeCLT/STMicroelectronics_CMSIS_SVD/STM32H7B0.svd"
+      },      
       "runToEntryPoint": "main",        
     },    
   ]
