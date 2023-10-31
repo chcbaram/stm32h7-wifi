@@ -497,6 +497,8 @@ void LL_SetSystemCoreClock(uint32_t CPU_Frequency)
   * (***): For stm32h7a3xx, stm32h7b3xx and stm32h7b0xx family lines.
   *
   */
+extern uint32_t LL_RCC_CalcPLLClockFreq(uint32_t PLLInputFreq, uint32_t M, uint32_t N, uint32_t FRACN, uint32_t PQR);
+
 ErrorStatus LL_PLL_ConfigSystemClock_HSI(LL_UTILS_PLLInitTypeDef *UTILS_PLLInitStruct,
                                          LL_UTILS_ClkInitTypeDef *UTILS_ClkInitStruct)
 {
