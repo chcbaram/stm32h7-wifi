@@ -93,7 +93,7 @@ target_compile_options(${EXECUTABLE} PRIVATE
 
   -Wall
   -g3
-  -O0
+  -Og
   )
 
 target_link_options(${EXECUTABLE} PRIVATE
@@ -109,7 +109,7 @@ target_link_options(${EXECUTABLE} PRIVATE
   -lstdc++
   -lsupc++
   -fno-rtti
-  -lnosys
+  
   -Wl,-Map=${PRJ_NAME}.map,--cref
   -Wl,--gc-sections
   -Xlinker -print-memory-usage -Xlinker
