@@ -61,12 +61,14 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 /* Specify the memory areas */
 MEMORY
 {
-  ITCMRAM (xrw)     : ORIGIN = 0x00000000, LENGTH = 64K  
-  DTCMRAM (xrw)     : ORIGIN = 0x20000000, LENGTH = 128K
-  BUF (xrw)         : ORIGIN = 0x24000000, LENGTH = 32K
-  RAM (xrw)         : ORIGIN = 0x24008000, LENGTH = 1024K - 32K
+  ITCMRAM     (xrw) : ORIGIN = 0x00000000, LENGTH = 64K 
+  NO_INIT     (xrw) : ORIGIN = 0x20000000, LENGTH = 8K
+  DTCMRAM     (xrw) : ORIGIN = 0x20002000, LENGTH = 128K - 8K
+  
+  BUF         (xrw) : ORIGIN = 0x24000000, LENGTH = 32K
+  RAM         (xrw) : ORIGIN = 0x24008000, LENGTH = 1024K - 32K
 
-  FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 128K
+  FLASH       (rx)  : ORIGIN = 0x08000000, LENGTH = 128K
 }
 
 /* Define output sections */
@@ -186,6 +188,15 @@ SECTIONS
     . = ALIGN(4);       
   } >BUF AT> FLASH   
 
+
+  .noinit(NOLOAD) :
+  {
+    . = ALIGN(4);
+    KEEP(*(.noinit))
+    . = ALIGN(4);
+  } >NO_INIT
+
+  
   /* Remove information from the standard libraries */
   /DISCARD/ :
   {
