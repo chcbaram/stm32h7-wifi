@@ -516,7 +516,7 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
 #ifdef _USE_HW_CLI
 void cliI2C(cli_args_t *args)
 {
-  bool ret = true;
+  bool ret = false;
   bool i2c_ret;
 
   uint8_t print_ch;
@@ -524,50 +524,52 @@ void cliI2C(cli_args_t *args)
   uint16_t dev_addr;
   uint16_t reg_addr;
   uint16_t length;
-
-  uint32_t i;
-  uint8_t i2c_data[128];
   uint32_t pre_time;
 
 
-  if (args->argc == 2)
+if (args->argc == 2 && args->isStr(0, "scan") == true)
+  {
+    uint32_t dev_cnt = 0;
+    print_ch = (uint16_t) args->getData(1);
+
+    print_ch = constrain(print_ch, 1, I2C_MAX_CH);
+    print_ch -= 1;
+
+    for (int i=0x00; i<= 0x7F; i++)
+    {
+      if (i2cIsDeviceReady(print_ch, i) == true)
+      {
+        cliPrintf("I2C CH%d Addr 0x%02X : OK\n", print_ch+1, i);
+        dev_cnt++;
+      }
+    }
+    if (dev_cnt == 0)
+    {
+      cliPrintf("no found\n");
+    }
+    ret = true;  
+  }
+
+  if (args->argc == 2 && args->isStr(0, "begin") == true)
   {
     print_ch = (uint16_t) args->getData(1);
 
     print_ch = constrain(print_ch, 1, I2C_MAX_CH);
     print_ch -= 1;
 
-    if(args->isStr(0, "scan") == true)
+    i2c_ret = i2cBegin(print_ch, 400);
+    if (i2c_ret == true)
     {
-      if (i2cIsBegin(print_ch) == true)
-      {
-        for (i=0x00; i<= 0x7F; i++)
-        {
-          if (i2cIsDeviceReady(print_ch, i) == true)
-          {
-            cliPrintf("I2C CH%d Addr 0x%02X : OK\n", print_ch+1, i);
-          }
-        }
-      }
-      else
-      {
-        cliPrintf("i2c ch%d is not begin\n", print_ch + 1);
-      }
+      cliPrintf("I2C CH%d Begin OK\n", print_ch + 1);
     }
-    else if(args->isStr(0, "begin") == true)
+    else
     {
-      i2c_ret = i2cBegin(print_ch, 400);
-      if (i2c_ret == true)
-      {
-        cliPrintf("I2C CH%d Begin OK\n", print_ch + 1);
-      }
-      else
-      {
-        cliPrintf("I2C CH%d Begin Fail\n", print_ch + 1);
-      }
+      cliPrintf("I2C CH%d Begin Fail\n", print_ch + 1);
     }
+    ret = true;
   }
-  else if (args->argc == 5)
+
+  if (args->argc == 5 && args->isStr(0, "read") == true)
   {
     print_ch = (uint16_t) args->getData(1);
     print_ch = constrain(print_ch, 1, I2C_MAX_CH);
@@ -577,46 +579,48 @@ void cliI2C(cli_args_t *args)
     length   = (uint16_t) args->getData(4);
     ch       = print_ch - 1;
 
-    if(args->isStr(0, "read") == true)
+    for (int i=0; i<length; i++)
     {
-      for (i=0; i<length; i++)
-      {
-        i2c_ret = i2cReadByte(ch, dev_addr, reg_addr+i, i2c_data, 100);
-
-        if (i2c_ret == true)
-        {
-          cliPrintf("%d I2C - 0x%02X : 0x%02X\n", print_ch, reg_addr+i, i2c_data[0]);
-        }
-        else
-        {
-          cliPrintf("%d I2C - Fail \n", print_ch);
-          break;
-        }
-      }
-    }
-    else if(args->isStr(0, "write") == true)
-    {
-      pre_time = millis();
-      i2c_ret = i2cWriteByte(ch, dev_addr, reg_addr, (uint8_t)length, 100);
+      uint8_t i2c_data;
+      i2c_ret = i2cReadByte(ch, dev_addr, reg_addr+i, &i2c_data, 100);
 
       if (i2c_ret == true)
       {
-        cliPrintf("%d I2C - 0x%02X : 0x%02X, %d ms\n", print_ch, reg_addr, length, millis()-pre_time);
+        cliPrintf("%d I2C - 0x%02X : 0x%02X\n", print_ch, reg_addr+i, i2c_data);
       }
       else
       {
         cliPrintf("%d I2C - Fail \n", print_ch);
+        break;
       }
+    }
+    ret = true;
+  }
+
+  if (args->argc == 5 && args->isStr(0, "write") == true)
+  {
+    print_ch = (uint16_t) args->getData(1);
+    print_ch = constrain(print_ch, 1, I2C_MAX_CH);
+
+    dev_addr = (uint16_t) args->getData(2);
+    reg_addr = (uint16_t) args->getData(3);
+    length   = (uint16_t) args->getData(4);
+    ch       = print_ch - 1;
+
+    pre_time = millis();
+    i2c_ret = i2cWriteByte(ch, dev_addr, reg_addr, (uint8_t)length, 100);
+
+    if (i2c_ret == true)
+    {
+      cliPrintf("%d I2C - 0x%02X : 0x%02X, %d ms\n", print_ch, reg_addr, length, millis()-pre_time);
     }
     else
     {
-      ret = false;
+      cliPrintf("%d I2C - Fail \n", print_ch);
     }
+    ret = true;
   }
-  else
-  {
-    ret = false;
-  }
+
 
   if (ret == false)
   {
