@@ -10,3 +10,4 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 firmware/stm32h7-wifi-fw/build/
+firmware/exam/EX-02-UART/build/
