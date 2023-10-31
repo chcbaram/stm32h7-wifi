@@ -155,10 +155,11 @@ void bspMpuInit(void)
   MPU_InitStruct.DisableExec      = MPU_INSTRUCTION_ACCESS_DISABLE;
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
 
-  /* Setup AXI SRAM, SRAM1 and SRAM2 in Write-through */
+
+  /* Setup AXI SRAM in Write-through */
   MPU_InitStruct.Number           = MPU_REGION_NUMBER1;
   MPU_InitStruct.Enable           = MPU_REGION_ENABLE;
-  MPU_InitStruct.BaseAddress      = D1_AXISRAM_BASE;
+  MPU_InitStruct.BaseAddress      = 0x24000000;
   MPU_InitStruct.Size             = MPU_REGION_SIZE_1MB;
   MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
   MPU_InitStruct.IsBufferable     = MPU_ACCESS_NOT_BUFFERABLE;
@@ -172,7 +173,7 @@ void bspMpuInit(void)
 
   /* Stringly Ordered (None Cache)*/
   MPU_InitStruct.Number           = MPU_REGION_NUMBER2;
-  MPU_InitStruct.BaseAddress      = D1_AXISRAM_BASE;
+  MPU_InitStruct.BaseAddress      = 0x24000000;
   MPU_InitStruct.Size             = MPU_REGION_SIZE_32KB;
   MPU_InitStruct.TypeExtField     = MPU_TEX_LEVEL0;
   MPU_InitStruct.IsCacheable      = MPU_ACCESS_NOT_CACHEABLE;
