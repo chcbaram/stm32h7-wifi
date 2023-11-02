@@ -39,7 +39,7 @@ bool faultReset(const char *p_msg, uint32_t *p_stack)
 {
   fault_log.magic_number = 0x5555AAAA;
   fault_log.type = 0;
-
+  
   if (p_stack != NULL)
   {
     fault_log.is_reg  = true; 
@@ -51,6 +51,13 @@ bool faultReset(const char *p_msg, uint32_t *p_stack)
     fault_log.REG_LR  = p_stack[5];  // Link register LR
     fault_log.REG_PC  = p_stack[6];  // Program counter PC
     fault_log.REG_PSR = p_stack[7];  // Program status word PSR
+
+    // TODO: 일단 SRAM에서 실행된 코드는 무시
+    //
+    if (fault_log.REG_PC == 0x24000000)
+    {
+      fault_log.magic_number = 0;
+    }
   }
   else
   {
