@@ -18,7 +18,8 @@ bool powerUpdate(void)
 {  
   typedef enum
   {
-    STATE_IDLE,
+    STATE_POWER_ON,
+    STATE_POWER_CHECK,
     STATE_PRESSED,
     STATE_POWER_OFF
   } PowerPinState_t;
@@ -36,16 +37,30 @@ bool powerUpdate(void)
   };
 
   static uint32_t pre_time;
-  static PowerPinState_t state = STATE_IDLE;
+  static uint32_t pre_time_update = 0;
+  static PowerPinState_t state = STATE_POWER_ON;
 
+
+  if (millis()-pre_time_update < 10)
+  {
+    return false;
+  }
 
   switch (state)
   {
-    case STATE_IDLE:
+    case STATE_POWER_ON:
+      if (gpioPinRead(POWER_BTN) != POWER_BTN_PRESSED)
+      {
+        state = STATE_POWER_CHECK;
+      }    
+      break;
+
+    case STATE_POWER_CHECK:
       if (gpioPinRead(POWER_BTN) == POWER_BTN_PRESSED)
       {
         pre_time = millis();
         state = STATE_PRESSED;
+        logPrintf("Power Btn Pressed\n");
       }
       break;
 
@@ -54,12 +69,13 @@ bool powerUpdate(void)
       {
         if (millis()-pre_time >= HW_POWER_OFF_TIME_MS)
         {
+          logPrintf("Power Off Ready\n");
           state = STATE_POWER_OFF;  
         }
       }
       else
       {
-        state = STATE_IDLE;
+        state = STATE_POWER_CHECK;
       }
       break;
 
@@ -68,6 +84,7 @@ bool powerUpdate(void)
       {
         if (gpioPinRead(POWER_BTN) == POWER_BTN_RELEASED)        
         {
+          logPrintf("Power Off Done\n");
           gpioPinWrite(GPIO_3V3_OFF, POWER_PIN_OFF);
         }
 
