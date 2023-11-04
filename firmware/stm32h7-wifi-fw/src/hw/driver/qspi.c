@@ -929,7 +929,7 @@ uint8_t BSP_QSPI_EnableMemoryMappedMode(void)
   s_command.Instruction        = QUAD_INOUT_FAST_READ_CMD;
   s_command.DummyCycles        = W25Q128FV_DUMMY_CYCLES_READ_QUAD;
   s_command.DQSMode            = HAL_OSPI_DQS_DISABLE;
-  s_command.SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD;
+  s_command.SIOOMode           = HAL_OSPI_SIOO_INST_ONLY_FIRST_CMD;
 
   if (HAL_OSPI_Command(&hqspi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
   {
