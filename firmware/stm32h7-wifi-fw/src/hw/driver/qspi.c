@@ -353,7 +353,6 @@ bool qspiSetXipMode(bool enable)
   {
     if (qspiGetXipMode() == true)
     {
-      // ret = qspiAbort();
       ret = qspiReset();
     }
   }
