@@ -23,6 +23,7 @@ typedef struct {
 
 bool qspiInit(void);
 bool qspiIsInit(void);
+bool qspiAbort(void);
 bool qspiReset(void);
 
 bool qspiRead(uint32_t addr, uint8_t *p_data, uint32_t length);
@@ -33,6 +34,8 @@ bool qspiEraseSector(uint32_t sector_addr);
 bool qspiEraseChip(void);
 bool qspiGetStatus(void);
 bool qspiGetInfo(qspi_info_t* p_info);
+bool qspiGetXipMode(void);
+bool qspiSetXipMode(bool enable);
 bool qspiEnableMemoryMappedMode(void);
 
 uint32_t qspiGetAddr(void);

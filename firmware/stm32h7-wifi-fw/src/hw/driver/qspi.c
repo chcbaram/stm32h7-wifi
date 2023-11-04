@@ -36,6 +36,8 @@ typedef struct {
 
 
 static bool is_init = false;
+static OSPI_HandleTypeDef hqspi;
+
 
 uint8_t BSP_QSPI_Init(void);
 uint8_t BSP_QSPI_DeInit(void);
@@ -50,6 +52,7 @@ uint8_t BSP_QSPI_EnableMemoryMappedMode(void);
 uint8_t BSP_QSPI_GetID(QSPI_Info* p_info);
 uint8_t BSP_QSPI_Config(void);
 uint8_t BSP_QSPI_Reset(void);
+uint8_t BSP_QSPI_Abort(void);
 
 #ifdef _USE_HW_CLI
 static void cliCmd(cli_args_t *args);
@@ -111,11 +114,24 @@ bool qspiReset(void)
 {
   bool ret = false;
 
-
-
   if (is_init == true)
   {
     if (BSP_QSPI_Reset() == QSPI_OK)
+    {
+      ret = true;
+    }
+  }
+
+  return ret;
+}
+
+bool qspiAbort(void)
+{
+  bool ret = false;
+
+  if (is_init == true)
+  {
+    if (BSP_QSPI_Abort() == QSPI_OK)
     {
       ret = true;
     }
@@ -133,10 +149,12 @@ bool qspiRead(uint32_t addr, uint8_t *p_data, uint32_t length)
 {
   uint8_t ret;
 
+  assert(qspiGetXipMode() == false);
+
   if (addr >= qspiGetLength())
   {
     return false;
-  }
+  }  
 
   ret = BSP_QSPI_Read(p_data, addr, length);
 
@@ -153,6 +171,9 @@ bool qspiRead(uint32_t addr, uint8_t *p_data, uint32_t length)
 bool qspiWrite(uint32_t addr, uint8_t *p_data, uint32_t length)
 {
   uint8_t ret;
+
+
+  assert(qspiGetXipMode() == false);
 
   if (addr >= qspiGetLength())
   {
@@ -175,6 +196,9 @@ bool qspiEraseBlock(uint32_t block_addr)
 {
   uint8_t ret;
 
+
+  assert(qspiGetXipMode() == false);
+
   ret = BSP_QSPI_Erase_Block(block_addr);
 
   if (ret == QSPI_OK)
@@ -190,6 +214,9 @@ bool qspiEraseBlock(uint32_t block_addr)
 bool qspiEraseSector(uint32_t sector_addr)
 {
   uint8_t ret;
+
+
+  assert(qspiGetXipMode() == false);
 
   ret = BSP_QSPI_Erase_Sector(sector_addr);
 
@@ -211,6 +238,8 @@ bool qspiErase(uint32_t addr, uint32_t length)
   uint32_t block_end;
   uint32_t i;
 
+
+  assert(qspiGetXipMode() == false);
 
 
   flash_length = W25Q128FV_FLASH_SIZE;
@@ -246,6 +275,8 @@ bool qspiErase(uint32_t addr, uint32_t length)
 bool qspiEraseChip(void)
 {
   uint8_t ret;
+
+  assert(qspiGetXipMode() == false);
 
   ret = BSP_QSPI_Erase_Chip();
 
@@ -307,6 +338,41 @@ bool qspiEnableMemoryMappedMode(void)
   }
 }
 
+bool qspiSetXipMode(bool enable)
+{
+  uint8_t ret = true;
+
+  if (enable)
+  {
+    if (qspiGetXipMode() == false)
+    {
+      ret = qspiEnableMemoryMappedMode();
+    }
+  }
+  else
+  {
+    if (qspiGetXipMode() == true)
+    {
+      // ret = qspiAbort();
+      ret = qspiReset();
+    }
+  }
+
+  return ret;
+}
+
+bool qspiGetXipMode(void)
+{
+  bool ret = false;
+
+  if (HAL_OSPI_GetState(&hqspi) == HAL_OSPI_STATE_BUSY_MEM_MAPPED)
+  {
+    ret = true;
+  }
+
+  return ret;
+}
+
 uint32_t qspiGetAddr(void)
 {
   return QSPI_BASE_ADDRESS;
@@ -319,7 +385,6 @@ uint32_t qspiGetLength(void)
 
 
 
-static OSPI_HandleTypeDef hqspi;
 
 
 
@@ -402,6 +467,16 @@ uint8_t BSP_QSPI_Reset(void)
   return QSPI_OK;
 }
 
+uint8_t BSP_QSPI_Abort(void)
+{
+  if (HAL_OSPI_Abort(&hqspi) != HAL_OK)
+  {
+    return QSPI_ERROR;
+  }
+
+  return QSPI_OK;
+}
+
 uint8_t BSP_QSPI_Config(void)
 {
   uint8_t reg = 0;
@@ -464,7 +539,7 @@ uint8_t BSP_QSPI_Read(uint8_t* p_data, uint32_t addr, uint32_t length)
   s_command.DataDtrMode        = HAL_OSPI_DATA_DTR_DISABLE;
   s_command.DummyCycles        = W25Q128FV_DUMMY_CYCLES_READ_QUAD;
   s_command.DQSMode            = HAL_OSPI_DQS_DISABLE;
-  s_command.SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD;
+  s_command.SIOOMode           = HAL_OSPI_SIOO_INST_ONLY_FIRST_CMD;
 
   s_command.Address            = addr;
   s_command.NbData             = length;
@@ -835,20 +910,38 @@ uint8_t BSP_QSPI_EnableMemoryMappedMode(void)
   
   s_command.DataMode           = HAL_OSPI_DATA_4_LINES;
   s_command.DataDtrMode        = HAL_OSPI_DATA_DTR_DISABLE;
+
+
+
+  // /* Configure the command for write */
+  // s_command.OperationType      = HAL_OSPI_OPTYPE_WRITE_CFG;
+  // s_command.Instruction        = QUAD_IN_FAST_PROG_CMD;
+  // s_command.DummyCycles        = 0;
+  // s_command.DQSMode            = HAL_OSPI_DQS_DISABLE;
+  // s_command.SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD;
+
+  // if (HAL_OSPI_Command(&hqspi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  // {
+  //   return QSPI_ERROR;
+  // }
+
+  /* Configure the command for read */
+  s_command.OperationType      = HAL_OSPI_OPTYPE_READ_CFG;
+  s_command.Instruction        = QUAD_INOUT_FAST_READ_CMD;
   s_command.DummyCycles        = W25Q128FV_DUMMY_CYCLES_READ_QUAD;
   s_command.DQSMode            = HAL_OSPI_DQS_DISABLE;
   s_command.SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD;
 
-
-  /* Configure the command */
   if (HAL_OSPI_Command(&hqspi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
   {
     return QSPI_ERROR;
   }
 
-  /* Configure the memory mapped mode */
-  s_mem_mapped_cfg.TimeOutActivation = HAL_OSPI_TIMEOUT_COUNTER_DISABLE;
+  hqspi.State = HAL_OSPI_STATE_CMD_CFG;
 
+  /* Configure the memory mapped mode */
+  s_mem_mapped_cfg.TimeOutActivation = HAL_OSPI_TIMEOUT_COUNTER_ENABLE;
+  s_mem_mapped_cfg.TimeOutPeriod     = 0x20;
   if (HAL_OSPI_MemoryMapped(&hqspi, &s_mem_mapped_cfg) != HAL_OK)
   {
     return QSPI_ERROR;
@@ -860,6 +953,12 @@ uint8_t BSP_QSPI_EnableMemoryMappedMode(void)
 static uint8_t QSPI_ResetMemory(OSPI_HandleTypeDef *p_hqspi)
 {
   OSPI_RegularCmdTypeDef s_command = {0};
+
+
+  if (HAL_OSPI_GetState(&hqspi) != HAL_OSPI_STATE_READY)
+  {
+    HAL_OSPI_Abort(p_hqspi);
+  }
 
   /* Initialize the reset enable command */
   s_command.OperationType      = HAL_OSPI_OPTYPE_COMMON_CFG;
@@ -1219,7 +1318,7 @@ void HAL_OSPI_MspDeInit(OSPI_HandleTypeDef* ospiHandle)
 #ifdef _USE_HW_CLI
 void cliCmd(cli_args_t *args)
 {
-  bool ret = true;
+  bool ret = false;
   uint32_t i;
   uint32_t addr;
   uint32_t length;
@@ -1228,113 +1327,170 @@ void cliCmd(cli_args_t *args)
   bool flash_ret;
 
 
-  if (args->argc == 1)
-  {
-    if(args->isStr(0, "info") == true)
-    {
-      cliPrintf("qspi addr  : 0x%X\n", 0);
-    }
-    else if(args->isStr(0, "test") == true)
-    {
-      uint8_t rx_buf[256];
 
-      for (int i=0; i<100; i++)
-      {
-        if (qspiRead(0x1000*i, rx_buf, 256))
-        {
-          cliPrintf("%d : OK\n", i);
-        }
-        else
-        {
-          cliPrintf("%d : FAIL\n", i);
-          break;
-        }
-      }
-    }    
-    else
+  if(args->argc == 1 && args->isStr(0, "info"))
+  {
+    cliPrintf("qspi flash addr  : 0x%X\n", 0);
+    cliPrintf("qspi xip   addr  : 0x%X\n", qspiGetAddr());
+    cliPrintf("qspi xip   mode  : %s\n", qspiGetXipMode() ? "True":"False");
+    cliPrintf("qspi state       : ");
+
+    switch(HAL_OSPI_GetState(&hqspi))
     {
-      ret = false;
+      case HAL_OSPI_STATE_RESET:
+        cliPrintf("RESET\n");
+        break;
+      case HAL_OSPI_STATE_HYPERBUS_INIT:
+        cliPrintf("HYPERBUS_INIT\n");
+        break;
+      case HAL_OSPI_STATE_READY:
+        cliPrintf("READY\n");
+        break; 
+      case HAL_OSPI_STATE_CMD_CFG:
+        cliPrintf("CMD_CFG\n");
+        break;    
+      case HAL_OSPI_STATE_READ_CMD_CFG:
+        cliPrintf("READ_CMD_CFG\n");
+        break;                                  
+      case HAL_OSPI_STATE_WRITE_CMD_CFG:
+        cliPrintf("WRITE_CMD_CFG\n");
+        break;      
+      case HAL_OSPI_STATE_BUSY_CMD:
+        cliPrintf("BUSY_CMD\n");
+        break;          
+      case HAL_OSPI_STATE_BUSY_TX:
+        cliPrintf("BUSY_TX\n");
+        break;       
+      case HAL_OSPI_STATE_BUSY_RX:
+        cliPrintf("BUSY_RX\n");
+        break;    
+      case HAL_OSPI_STATE_BUSY_AUTO_POLLING:
+        cliPrintf("BUSY_AUTO_POLLING\n");
+        break;          
+      case HAL_OSPI_STATE_BUSY_MEM_MAPPED:
+        cliPrintf("BUSY_MEM_MAPPED\n");
+        break;         
+      case HAL_OSPI_STATE_ABORT:
+        cliPrintf("ABORT\n");
+        break;        
+      case HAL_OSPI_STATE_ERROR:
+        cliPrintf("ERROR\n");
+        break;                                                                                        
+      default:
+        cliPrintf("UNKWNON\n");
+        break;
     }
+    ret = true;
   }
-  else if (args->argc == 3)
+  
+  if(args->argc == 1 && args->isStr(0, "test"))
   {
-    if(args->isStr(0, "read") == true)
+    uint8_t rx_buf[256];
+
+    for (int i=0; i<100; i++)
     {
-      addr   = (uint32_t)args->getData(1);
-      length = (uint32_t)args->getData(2);
-
-      for (i=0; i<length; i++)
+      if (qspiRead(0x1000*i, rx_buf, 256))
       {
-        flash_ret = qspiRead(addr+i, &data, 1);
-
-        if (flash_ret == true)
-        {
-          cliPrintf( "addr : 0x%X\t 0x%02X\n", addr+i, data);
-        }
-        else
-        {
-          cliPrintf( "addr : 0x%X\t Fail\n", addr+i);
-        }
-      }
-    }
-    else if(args->isStr(0, "erase") == true)
-    {
-      addr   = (uint32_t)args->getData(1);
-      length = (uint32_t)args->getData(2);
-
-      pre_time = millis();
-      flash_ret = qspiErase(addr, length);
-
-      cliPrintf( "addr : 0x%X\t len : %d %d ms\n", addr, length, (millis()-pre_time));
-      if (flash_ret)
-      {
-        cliPrintf("OK\n");
+        cliPrintf("%d : OK\n", i);
       }
       else
       {
-        cliPrintf("FAIL\n");
+        cliPrintf("%d : FAIL\n", i);
+        break;
       }
     }
-    else if(args->isStr(0, "write") == true)
+    ret = true;
+  }    
+
+  if (args->argc == 2 && args->isStr(0, "xip"))
+  {
+    bool xip_enable;
+
+    xip_enable = args->isStr(1, "on") ? true:false;
+
+    if (qspiSetXipMode(xip_enable))
+      cliPrintf("qspiSetXipMode() : OK\n");
+    else
+      cliPrintf("qspiSetXipMode() : Fail\n");
+    
+    cliPrintf("qspi xip mode  : %s\n", qspiGetXipMode() ? "True":"False");
+
+    ret = true;
+  } 
+
+  if (args->argc == 3 && args->isStr(0, "read"))
+  {
+    addr   = (uint32_t)args->getData(1);
+    length = (uint32_t)args->getData(2);
+
+    for (i=0; i<length; i++)
     {
-      uint32_t flash_data;
+      flash_ret = qspiRead(addr+i, &data, 1);
 
-      addr = (uint32_t)args->getData(1);
-      flash_data = (uint32_t )args->getData(2);
-
-      pre_time = millis();
-      flash_ret = qspiWrite(addr, (uint8_t *)&flash_data, 4);
-
-      cliPrintf( "addr : 0x%X\t 0x%X %dms\n", addr, flash_data, millis()-pre_time);
-      if (flash_ret)
+      if (flash_ret == true)
       {
-        cliPrintf("OK\n");
+        cliPrintf( "addr : 0x%X\t 0x%02X\n", addr+i, data);
       }
       else
       {
-        cliPrintf("FAIL\n");
+        cliPrintf( "addr : 0x%X\t Fail\n", addr+i);
       }
+    }
+    ret = true;
+  }
+  
+  if(args->argc == 3 && args->isStr(0, "erase") == true)
+  {
+    addr   = (uint32_t)args->getData(1);
+    length = (uint32_t)args->getData(2);
+
+    pre_time = millis();
+    flash_ret = qspiErase(addr, length);
+
+    cliPrintf( "addr : 0x%X\t len : %d %d ms\n", addr, length, (millis()-pre_time));
+    if (flash_ret)
+    {
+      cliPrintf("OK\n");
     }
     else
     {
-      ret = false;
+      cliPrintf("FAIL\n");
     }
+    ret = true;
   }
-  else
+
+  if(args->argc == 3 && args->isStr(0, "write") == true)
   {
-    ret = false;
+    uint32_t flash_data;
+
+    addr = (uint32_t)args->getData(1);
+    flash_data = (uint32_t )args->getData(2);
+
+    pre_time = millis();
+    flash_ret = qspiWrite(addr, (uint8_t *)&flash_data, 4);
+
+    cliPrintf( "addr : 0x%X\t 0x%X %dms\n", addr, flash_data, millis()-pre_time);
+    if (flash_ret)
+    {
+      cliPrintf("OK\n");
+    }
+    else
+    {
+      cliPrintf("FAIL\n");
+    }
+    ret = true;
   }
 
 
   if (ret == false)
   {
-    cliPrintf( "qspi info\n");
-    cliPrintf( "qspi test\n");
-    cliPrintf( "qspi read  [addr] [length]\n");
-    cliPrintf( "qspi erase [addr] [length]\n");
-    cliPrintf( "qspi write [addr] [data]\n");
+    cliPrintf("qspi info\n");
+    cliPrintf("qspi xip on:off\n");
+    cliPrintf("qspi test\n");
+    cliPrintf("qspi read  [addr] [length]\n");
+    cliPrintf("qspi erase [addr] [length]\n");
+    cliPrintf("qspi write [addr] [data]\n");
   }
-
 }
 #endif
 
