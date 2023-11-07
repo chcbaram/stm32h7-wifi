@@ -34,7 +34,7 @@ file(GLOB_RECURSE SRC_FILES_RECURSE CONFIGURE_DEPENDS
   src/bsp/*.s
   src/common/*.c
   src/hw/*.c
-  src/lib/STM32H7xx_HAL_Driver/Src/*.c
+  src/lib/ST/STM32H7xx_HAL_Driver/Src/*.c
 )
 
 # 특정 폴더를 빌드에서 제외한다.
@@ -71,10 +71,10 @@ target_include_directories(${EXECUTABLE} PRIVATE
   src/hw/driver
   src/lib
 
-  src/lib/CMSIS/Include
-  src/lib/CMSIS/Device/ST/STM32H7xx/Include
-  src/lib/CMSIS/DSP/Include
-  src/lib/STM32H7xx_HAL_Driver/Inc
+  src/lib/ST/CMSIS/Include
+  src/lib/ST/CMSIS/Device/ST/STM32H7xx/Include
+  src/lib/ST/CMSIS/DSP/Include
+  src/lib/ST/STM32H7xx_HAL_Driver/Inc
 )
 
 target_compile_definitions(${EXECUTABLE} PRIVATE
