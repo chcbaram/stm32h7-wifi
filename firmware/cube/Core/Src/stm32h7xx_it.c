@@ -56,6 +56,8 @@
 
 /* External variables --------------------------------------------------------*/
 extern I2C_HandleTypeDef hi2c1;
+extern DMA_HandleTypeDef hdma_sai1_a;
+extern SAI_HandleTypeDef hsai_BlockA1;
 extern SD_HandleTypeDef hsd2;
 extern DMA_HandleTypeDef hdma_spi2_rx;
 extern SPI_HandleTypeDef hspi2;
@@ -232,6 +234,20 @@ void DMA1_Stream1_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles DMA1 stream2 global interrupt.
+  */
+void DMA1_Stream2_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream2_IRQn 0 */
+
+  /* USER CODE END DMA1_Stream2_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_sai1_a);
+  /* USER CODE BEGIN DMA1_Stream2_IRQn 1 */
+
+  /* USER CODE END DMA1_Stream2_IRQn 1 */
+}
+
+/**
   * @brief This function handles I2C1 event interrupt.
   */
 void I2C1_EV_IRQHandler(void)
@@ -271,6 +287,20 @@ void SPI2_IRQHandler(void)
   /* USER CODE BEGIN SPI2_IRQn 1 */
 
   /* USER CODE END SPI2_IRQn 1 */
+}
+
+/**
+  * @brief This function handles SAI1 global interrupt.
+  */
+void SAI1_IRQHandler(void)
+{
+  /* USER CODE BEGIN SAI1_IRQn 0 */
+
+  /* USER CODE END SAI1_IRQn 0 */
+  HAL_SAI_IRQHandler(&hsai_BlockA1);
+  /* USER CODE BEGIN SAI1_IRQn 1 */
+
+  /* USER CODE END SAI1_IRQn 1 */
 }
 
 /**

@@ -22,6 +22,7 @@
 #include "i2c.h"
 #include "octospi.h"
 #include "rtc.h"
+#include "sai.h"
 #include "sdmmc.h"
 #include "spi.h"
 #include "tim.h"
@@ -112,6 +113,7 @@ int main(void)
   MX_TIM17_Init();
   MX_SDMMC2_SD_Init();
   MX_SPI2_Init();
+  MX_SAI1_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
