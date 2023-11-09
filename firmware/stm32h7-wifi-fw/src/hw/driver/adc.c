@@ -182,14 +182,6 @@ float adcReadVoltage(uint8_t ch)
   return adcConvVoltage(ch, adcRead(ch));
 }
 
-#define ADC_CALC_VREFANALOG_VOLTAGE(__VREFINT_ADC_DATA__,\
-                                         __ADC_RESOLUTION__)                   \
-  (((uint32_t)(*VREFINT_CAL_ADDR) * VREFINT_CAL_VREF)                          \
-    / __LL_ADC_CONVERT_DATA_RESOLUTION((__VREFINT_ADC_DATA__),                 \
-                                       (__ADC_RESOLUTION__),                   \
-                                       LL_ADC_RESOLUTION_16B)                  \
-  )
-
 float adcConvVoltage(uint8_t ch, uint32_t adc_value)
 {
   float ret = 0;
