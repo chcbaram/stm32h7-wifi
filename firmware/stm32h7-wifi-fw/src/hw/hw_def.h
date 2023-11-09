@@ -6,7 +6,7 @@
 #include "bsp.h"
 
 
-#define _DEF_FIRMWATRE_VERSION    "V231104R1"
+#define _DEF_FIRMWATRE_VERSION    "V231109R1"
 #define _DEF_BOARD_NAME           "STM32H7-WIFI-FW"
 
 
@@ -92,6 +92,7 @@
 //
 #define _USE_CLI_HW_LOG             1
 #define _USE_CLI_HW_ASSERT          1
+#define _USE_CLI_HW_RESET           1
 #define _USE_CLI_HW_EEPROM          0
 #define _USE_CLI_HW_GPIO            0
 #define _USE_CLI_HW_I2C             0
