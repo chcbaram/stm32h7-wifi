@@ -119,6 +119,7 @@ int main(void)
   MX_USART2_UART_Init();
   MX_ADC2_Init();
   MX_USB_OTG_HS_PCD_Init();
+  MX_SPI4_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
