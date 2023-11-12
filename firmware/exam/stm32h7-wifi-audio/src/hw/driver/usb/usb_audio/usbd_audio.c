@@ -643,10 +643,11 @@ static uint8_t USBD_AUDIO_EP0_TxReady(USBD_HandleTypeDef *pdev)
   * @param  pdev: device instance
   * @retval status
   */
+extern uint8_t Audio_Sof(USBD_HandleTypeDef *pdev);
+
 static uint8_t USBD_AUDIO_SOF(USBD_HandleTypeDef *pdev)
 {
-  UNUSED(pdev);
-
+  Audio_Sof(pdev);
   return (uint8_t)USBD_OK;
 }
 
@@ -754,6 +755,7 @@ static uint8_t USBD_AUDIO_IsoOutIncomplete(USBD_HandleTypeDef *pdev, uint8_t epn
   * @param  epnum: endpoint index
   * @retval status
   */
+#if 0
 static uint8_t USBD_AUDIO_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum)
 {
   uint16_t PacketSize;
@@ -813,6 +815,35 @@ static uint8_t USBD_AUDIO_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum)
 
   return (uint8_t)USBD_OK;
 }
+#else
+static uint8_t USBD_AUDIO_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum)
+{
+  uint16_t PacketSize;
+  USBD_AUDIO_HandleTypeDef *haudio;
+
+#ifdef USE_USBD_COMPOSITE
+  /* Get the Endpoints addresses allocated for this class instance */
+  AUDIOOutEpAdd = USBD_CoreGetEPAdd(pdev, USBD_EP_OUT, USBD_EP_TYPE_ISOC, (uint8_t)pdev->classId);
+#endif /* USE_USBD_COMPOSITE */
+
+  haudio = (USBD_AUDIO_HandleTypeDef *)pdev->pClassDataCmsit[pdev->classId];
+
+  if (haudio == NULL)
+  {
+    return (uint8_t)USBD_FAIL;
+  }
+
+  if (epnum == AUDIOOutEpAdd)
+  {
+    /* Get received data packet length */
+    PacketSize = (uint16_t)USBD_LL_GetRxDataSize(pdev, epnum);
+
+    /* Packet received Callback */
+    ((USBD_AUDIO_ItfTypeDef *)pdev->pUserData[pdev->classId])->Receive(haudio->buffer, PacketSize);
+  }
+  return (uint8_t)USBD_OK;
+}
+#endif
 
 /**
   * @brief  AUDIO_Req_GetCurrent

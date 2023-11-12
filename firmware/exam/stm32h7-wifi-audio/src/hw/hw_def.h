@@ -114,7 +114,7 @@
 #define _USE_CLI_HW_SPI_FLASH       0
 #define _USE_CLI_HW_FATFS           0
 #define _USE_CLI_HW_FS              0
-#define _USE_CLI_HW_SAI             0
+#define _USE_CLI_HW_SAI             1
 #define _USE_CLI_HW_ESP             0
 #define _USE_CLI_HW_BUTTON          0
 #define _USE_CLI_HW_ADC             0

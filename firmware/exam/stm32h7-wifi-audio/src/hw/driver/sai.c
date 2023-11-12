@@ -378,7 +378,7 @@ void HAL_SAI_MspInit(SAI_HandleTypeDef* saiHandle)
       case SAI_AUDIO_FREQUENCY_32K:
         PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SAI1;
         PeriphClkInitStruct.PLL3.PLL3M = 4;
-        PeriphClkInitStruct.PLL3.PLL3N = 64;
+        PeriphClkInitStruct.PLL3.PLL3N = 63;
         PeriphClkInitStruct.PLL3.PLL3P = 4;
         PeriphClkInitStruct.PLL3.PLL3Q = 4;
         PeriphClkInitStruct.PLL3.PLL3R = 4;

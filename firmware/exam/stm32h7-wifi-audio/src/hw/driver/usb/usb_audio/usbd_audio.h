@@ -168,6 +168,7 @@ typedef struct
   int8_t (*MuteCtl)(uint8_t cmd);
   int8_t (*PeriodicTC)(uint8_t *pbuf, uint32_t size, uint8_t cmd);
   int8_t (*GetState)(void);
+  int8_t (*Receive)(uint8_t *pbuf, uint32_t size);
 } USBD_AUDIO_ItfTypeDef;
 
 /*

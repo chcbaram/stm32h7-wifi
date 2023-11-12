@@ -31,6 +31,9 @@ static int8_t Audio_VolumeCtl(uint8_t vol);
 static int8_t Audio_MuteCtl(uint8_t cmd);
 static int8_t Audio_PeriodicTC(uint8_t *pbuf, uint32_t size, uint8_t cmd);
 static int8_t Audio_GetState(void);
+static int8_t Audio_Receive(uint8_t *pbuf, uint32_t size);
+int8_t Audio_ReceiveReady(void);
+
 
 /* Private variables --------------------------------------------------------- */
 extern USBD_HandleTypeDef USBD_Device;
@@ -42,7 +45,14 @@ USBD_AUDIO_ItfTypeDef USBD_AUDIO_fops = {
   Audio_MuteCtl,
   Audio_PeriodicTC,
   Audio_GetState,
+  Audio_Receive
 };
+
+
+volatile static bool is_rx_full = false;
+static uint8_t sai_ch = 0;
+static uint32_t pre_time_rd = 0;
+
 
 // BSP_AUDIO_Init_t audio_init;
 /* Private functions --------------------------------------------------------- */
@@ -70,8 +80,31 @@ static int8_t Audio_Init(uint32_t AudioFreq, uint32_t Volume, uint32_t options)
   logPrintf("  options   : %d\n", options);
 
   saiSetSampleRate(AudioFreq);
-
   return 0;
+}
+
+uint8_t Audio_Sof(USBD_HandleTypeDef *pdev)
+{
+  if (is_rx_full)
+  {
+    uint32_t w_buf_len;
+
+    w_buf_len = saiAvailableForWrite(sai_ch); 
+    if (w_buf_len >= AUDIO_OUT_PACKET/2)
+    {
+      Audio_ReceiveReady();
+      is_rx_full = false;
+    }
+  }
+  else
+  {
+    if (millis()-pre_time_rd >= 10)
+    {
+      Audio_ReceiveReady();
+      pre_time_rd = millis();
+    }
+  }
+  return (uint8_t)USBD_OK;
 }
 
 /**
@@ -137,8 +170,8 @@ static int8_t Audio_MuteCtl(uint8_t cmd)
 {
   // TODO: Audio_MuteCtl()
   // BSP_AUDIO_OUT_Mute(0);
-  logPrintf("Audio_MuteCtl()");
-  logPrintf("  cmd : %d\n", cmd);
+  // logPrintf("Audio_MuteCtl()");
+  // logPrintf("  cmd : %d\n", cmd);
   return 0;
 }
 
@@ -167,23 +200,36 @@ static int8_t Audio_GetState(void)
   return 0;
 }
 
-/**
-  * @brief  Manages the DMA full Transfer complete event.
-  * @param  None
-  * @retval None
-  */
-void BSP_AUDIO_OUT_TransferComplete_CallBack(uint32_t Instance)
+int8_t Audio_Receive(uint8_t *pbuf, uint32_t size)
 {
-  USBD_AUDIO_Sync(&USBD_Device, AUDIO_OFFSET_FULL);
+  saiWrite(sai_ch, (int16_t *)pbuf, size/2);
+
+  uint32_t w_buf_len;
+
+  w_buf_len = saiAvailableForWrite(sai_ch); 
+  // logPrintf("%d %d\n", w_buf_len, millis()-pre_time_rd);
+  // logPrintf("%d\n", size);
+  if (w_buf_len >= AUDIO_OUT_PACKET/2)
+  {
+    Audio_ReceiveReady();  
+  }
+  else
+  {
+    is_rx_full = true;
+  }
+
+  pre_time_rd = millis();
+
+  return (int8_t)USBD_OK;
 }
 
-/**
-  * @brief  Manages the DMA Half Transfer complete event.
-  * @param  None
-  * @retval None
-  */
-void BSP_AUDIO_OUT_HalfTransfer_CallBack(uint32_t Instance)
+int8_t Audio_ReceiveReady(void)
 {
-  USBD_AUDIO_Sync(&USBD_Device, AUDIO_OFFSET_HALF);
-}
+  USBD_AUDIO_HandleTypeDef *haudio = (USBD_AUDIO_HandleTypeDef*)USBD_Device.pClassData;
 
+  (void)USBD_LL_PrepareReceive(&USBD_Device, AUDIO_OUT_EP,
+                                haudio->buffer,
+                                AUDIO_OUT_PACKET);      
+
+  return 0;
+}
