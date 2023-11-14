@@ -170,8 +170,8 @@ static int8_t Audio_MuteCtl(uint8_t cmd)
 {
   // TODO: Audio_MuteCtl()
   // BSP_AUDIO_OUT_Mute(0);
-  // logPrintf("Audio_MuteCtl()");
-  // logPrintf("  cmd : %d\n", cmd);
+  logPrintf("Audio_MuteCtl()\n");
+  logPrintf("  cmd : %d\n", cmd);
   return 0;
 }
 

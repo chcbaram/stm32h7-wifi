@@ -45,6 +45,27 @@ extern "C" {
 #define USBD_AUDIO_FREQ                               48000U
 #endif /* USBD_AUDIO_FREQ */
 
+// See USB Device Class Definition for Audio Devices v1.0 p.77
+ // max volume is 0dB, this is to avoid clipping
+ #ifndef USBD_AUDIO_VOL_MAX
+ #define USBD_AUDIO_VOL_MAX                            0x0000U
+ #endif
+
+ // 1dB <=> 0x100, -96dB = 0xA000
+ #ifndef USBD_AUDIO_VOL_MIN
+ #define USBD_AUDIO_VOL_MIN                            0xA000U
+ #endif
+
+ #ifndef USBD_AUDIO_VOL_DEFAULT
+ #define USBD_AUDIO_VOL_DEFAULT                        0xA000U
+ #endif
+
+ // 3dB step resolution
+ #ifndef USBD_AUDIO_VOL_STEP
+ #define USBD_AUDIO_VOL_STEP                           0x0300U
+ #endif
+
+
 #ifndef USBD_MAX_NUM_INTERFACES
 #define USBD_MAX_NUM_INTERFACES                       1U
 #endif /* USBD_AUDIO_FREQ */
@@ -57,9 +78,10 @@ extern "C" {
 #define AUDIO_FS_BINTERVAL                            0x01U
 #endif /* AUDIO_FS_BINTERVAL */
 
-#ifndef AUDIO_OUT_EP
+
 #define AUDIO_OUT_EP                                  0x01U
-#endif /* AUDIO_OUT_EP */
+#define AUDIO_IN_EP                                   0x81U
+
 
 #define USB_AUDIO_CONFIG_DESC_SIZ                     0x6DU
 #define AUDIO_INTERFACE_DESC_SIZE                     0x09U
@@ -90,6 +112,7 @@ extern "C" {
 #define AUDIO_STREAMING_INTERFACE_DESC_SIZE           0x07U
 
 #define AUDIO_CONTROL_MUTE                            0x0001U
+#define AUDIO_CONTROL_VOL                             0x0002U
 
 #define AUDIO_FORMAT_TYPE_I                           0x01U
 #define AUDIO_FORMAT_TYPE_III                         0x03U
@@ -98,8 +121,27 @@ extern "C" {
 
 #define AUDIO_REQ_GET_CUR                             0x81U
 #define AUDIO_REQ_SET_CUR                             0x01U
+#define AUDIO_REQ_GET_MIN                             0x82U
+#define AUDIO_REQ_GET_MAX                             0x83U
+#define AUDIO_REQ_GET_RES                             0x84U
+#define AUDIO_REQ_SET_MIN                             0x02U
+#define AUDIO_REQ_SET_MAX                             0x03U
+#define AUDIO_REQ_SET_RES                             0x04U
 
 #define AUDIO_OUT_STREAMING_CTRL                      0x02U
+
+
+/* Audio Control Requests */
+#define AUDIO_CONTROL_REQ                             0x01U
+/* Feature Unit, UAC Spec 1.0 p.102 */
+#define AUDIO_CONTROL_REQ_FU_MUTE                     0x01U
+#define AUDIO_CONTROL_REQ_FU_VOL                      0x02U
+
+/* Audio Streaming Requests */
+#define AUDIO_STREAMING_REQ                           0x02U
+#define AUDIO_STREAMING_REQ_FREQ_CTRL                 0x01U
+#define AUDIO_STREAMING_REQ_PITCH_CTRL                0x02U
+
 
 #define AUDIO_OUT_TC                                  0x01U
 #define AUDIO_IN_TC                                   0x02U
@@ -140,10 +182,13 @@ typedef enum
   */
 typedef struct
 {
-  uint8_t cmd;
-  uint8_t data[USB_MAX_EP0_SIZE];
+  uint8_t cmd;                    /* bRequest */
+  uint8_t req_type;               /* bmRequest */
+  uint8_t cs;                     /* wValue (high byte): Control Selector */
+  uint8_t cn;                     /* wValue (low byte): Control Number */
+  uint8_t unit;                   /* wIndex: Feature Unit ID, Extension Unit ID, or Interface, Endpoint */  
   uint8_t len;
-  uint8_t unit;
+  uint8_t data[USB_MAX_EP0_SIZE];
 } USBD_AUDIO_ControlTypeDef;
 
 
@@ -155,6 +200,10 @@ typedef struct
   uint8_t rd_enable;
   uint16_t rd_ptr;
   uint16_t wr_ptr;
+  
+  int16_t volume;
+  uint8_t volume_percent;
+  uint8_t mute; // 0 = unmuted, 1 = muted  
   USBD_AUDIO_ControlTypeDef control;
 } USBD_AUDIO_HandleTypeDef;
 
