@@ -203,6 +203,7 @@ typedef struct
   
   int16_t volume;
   uint8_t volume_percent;
+  int32_t vol_3dB_shift;
   uint8_t mute; // 0 = unmuted, 1 = muted  
   USBD_AUDIO_ControlTypeDef control;
 } USBD_AUDIO_HandleTypeDef;

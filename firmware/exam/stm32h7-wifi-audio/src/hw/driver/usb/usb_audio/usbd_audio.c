@@ -396,6 +396,7 @@ static uint8_t USBD_AUDIO_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
   haudio->wr_ptr = 0U;
   haudio->rd_ptr = 0U;
   haudio->rd_enable = 0U;
+  haudio->volume = USBD_AUDIO_VOL_DEFAULT;
 
   /* Initialize the Audio output Hardware layer */
   if (((USBD_AUDIO_ItfTypeDef *)pdev->pUserData[pdev->classId])->Init(USBD_AUDIO_FREQ,
@@ -619,6 +620,27 @@ static int32_t USBD_AUDIO_Get_Vol3dB_Shift(int16_t volume ){
 	return (int32_t)((((int16_t)USBD_AUDIO_VOL_MAX - volume) + (int16_t)USBD_AUDIO_VOL_STEP/2)/(int16_t)USBD_AUDIO_VOL_STEP);
 	}
 
+// ref : https://www.microchip.com/forums/m932509.aspx
+int32_t USBD_AUDIO_Volume_Ctrl(int32_t sample, int32_t shift_3dB)
+{
+	int32_t sample_atten = sample;
+	int32_t shift_6dB = shift_3dB>>1;
+
+	if (shift_3dB & 1) 
+  {
+    // shift_3dB is odd, implement 6dB shift and compensate
+    shift_6dB++;
+    sample_atten >>= shift_6dB;
+    sample_atten += (sample_atten>>1);
+  }
+	else
+  {
+    // shift_3dB is even, implement with 6dB shift
+    sample_atten >>= shift_6dB;
+  }
+	return sample_atten;
+}
+
 /**
   * @brief  USBD_AUDIO_EP0_RxReady
   *         handle EP0 Rx Ready event
@@ -648,8 +670,6 @@ static uint8_t USBD_AUDIO_EP0_RxReady(USBD_HandleTypeDef *pdev)
     if (haudio->control.req_type == AUDIO_CONTROL_REQ) 
     {
       int16_t volume;
-      int16_t volume_min = (int16_t)USBD_AUDIO_VOL_MIN;
-      int16_t volume_max = (int16_t)USBD_AUDIO_VOL_MAX;
 
       switch (haudio->control.cs) 
       {
@@ -663,9 +683,8 @@ static uint8_t USBD_AUDIO_EP0_RxReady(USBD_HandleTypeDef *pdev)
         case AUDIO_CONTROL_REQ_FU_VOL: 
           volume = *(int16_t*)&haudio->control.data[0];
           haudio->volume = volume;
-          // haudio->vol_3dB_shift = USBD_AUDIO_Get_Vol3dB_Shift(volume);
-          haudio->volume_percent = cmap(volume, volume_min, volume_max, 0, 100);
-          logPrintf("0x%X %d %d\n", volume, volume, USBD_AUDIO_Get_Vol3dB_Shift(volume));
+          haudio->vol_3dB_shift = USBD_AUDIO_Get_Vol3dB_Shift(volume);
+          haudio->volume_percent = USBD_AUDIO_Volume_Ctrl(100, haudio->vol_3dB_shift/2);
           ((USBD_AUDIO_ItfTypeDef*)pdev->pUserData[pdev->classId])->VolumeCtl(haudio->volume_percent);
           break;
       }      

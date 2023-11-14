@@ -158,6 +158,9 @@ static int8_t Audio_VolumeCtl(uint8_t vol)
   // BSP_AUDIO_OUT_SetVolume(0, vol);
   logPrintf("Audio_VolumeCtl()\n");
   logPrintf("  vol : %d\n", vol);
+
+  saiSetVolume(vol);
+  
   return 0;
 }
 
