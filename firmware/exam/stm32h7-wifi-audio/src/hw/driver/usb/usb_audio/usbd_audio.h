@@ -43,25 +43,7 @@ extern "C" {
 #ifndef USBD_AUDIO_FREQ
 /* AUDIO Class Config */
 #define USBD_AUDIO_FREQ                               48000U
-
-#define USB_AUDIO_CONFIG_FREQ_192_K                   192000 /* to use only with class audio 2.0 */
-#define USB_AUDIO_CONFIG_FREQ_96_K                    96000
-#define USB_AUDIO_CONFIG_FREQ_48_K                    48000 
-#define USB_AUDIO_CONFIG_FREQ_44_1_K                  44100
-#define USB_AUDIO_CONFIG_FREQ_32_K                    32000
-#define USB_AUDIO_CONFIG_FREQ_16_K                    16000
-#define USB_AUDIO_CONFIG_FREQ_8_K                     8000 
 #endif /* USBD_AUDIO_FREQ */
-
-#define USB_AUDIO_CONFIG_PLAY_RES_BIT                 16 /* 24 bit per sample */
-#define USB_AUDIO_CONFIG_PLAY_RES_BYTE                2 /* 3 bytes */   
-
-#define USBD_EP_ATTR_ISOC_NOSYNC                      0x00 /* attribute no synchro */
-#define USBD_EP_ATTR_ISOC_ASYNC                       0x04 /* attribute synchro by feedback  */
-#define USBD_EP_ATTR_ISOC_ADAPT                       0x08 /* attribute synchro adaptative  */
-#define USBD_EP_ATTR_ISOC_SYNC                        0x0C /* attribute synchro synchronous  */
-    
-
 
 #ifndef USBD_MAX_NUM_INTERFACES
 #define USBD_MAX_NUM_INTERFACES                       1U
@@ -78,9 +60,6 @@ extern "C" {
 #ifndef AUDIO_OUT_EP
 #define AUDIO_OUT_EP                                  0x01U
 #endif /* AUDIO_OUT_EP */
-
-#define AUDIO_OUT_EP_SYNC                             0x81
-
 
 #define USB_AUDIO_CONFIG_DESC_SIZ                     0x6DU
 #define AUDIO_INTERFACE_DESC_SIZE                     0x09U
@@ -111,7 +90,6 @@ extern "C" {
 #define AUDIO_STREAMING_INTERFACE_DESC_SIZE           0x07U
 
 #define AUDIO_CONTROL_MUTE                            0x0001U
-#define AUDIO_CONTROL_VOLUME                          0x0002U
 
 #define AUDIO_FORMAT_TYPE_I                           0x01U
 #define AUDIO_FORMAT_TYPE_III                         0x03U
@@ -120,28 +98,12 @@ extern "C" {
 
 #define AUDIO_REQ_GET_CUR                             0x81U
 #define AUDIO_REQ_SET_CUR                             0x01U
-#define AUDIO_REQ_SET_MIN                             0x02U
-#define AUDIO_REQ_GET_MIN                             0x82U
-#define AUDIO_REQ_SET_MAX                             0x03U
-#define AUDIO_REQ_GET_MAX                             0x83U
-#define AUDIO_REQ_SET_RES                             0x04U
-#define AUDIO_REQ_GET_RES                             0x84U
-#define AUDIO_REQ_SET_MEM                             0x05U
-#define AUDIO_REQ_GET_MEM                             0x85U
-#define AUDIO_REQ_GET_STAT                            0xFFU 
 
 #define AUDIO_OUT_STREAMING_CTRL                      0x02U
 
 #define AUDIO_OUT_TC                                  0x01U
 #define AUDIO_IN_TC                                   0x02U
 
-// #define AUDIO_CONFIG_PLAY_TERMINAL_INPUT_ID           0x12
-// #define AUDIO_CONFIG_PLAY_UNIT_FEATURE_ID             0x16
-// #define AUDIO_CONFIG_PLAY_TERMINAL_OUTPUT_ID          0x14
-
-#define AUDIO_CONFIG_PLAY_TERMINAL_INPUT_ID           0x01
-#define AUDIO_CONFIG_PLAY_UNIT_FEATURE_ID             0x02
-#define AUDIO_CONFIG_PLAY_TERMINAL_OUTPUT_ID          0x03
 
 #define AUDIO_OUT_PACKET                              (uint16_t)(((USBD_AUDIO_FREQ * 2U * 2U) / 1000U))
 #define AUDIO_DEFAULT_VOLUME                          70U
