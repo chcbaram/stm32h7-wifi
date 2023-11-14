@@ -100,7 +100,6 @@ bool usbBegin(UsbMode_t usb_mode)
     #if HW_USE_AUDIO == 1
     /* Init Device Library */
     USBD_Init(&USBD_Device, &AUDIO_Desc, DEVICE_HS);
-    delay(100);
     
     /* Add Supported Class */
     USBD_RegisterClass(&USBD_Device, USBD_AUDIO_CLASS);

@@ -84,6 +84,7 @@ bool USBD_is_connected(void)
 
 void HAL_PCD_MspInit(PCD_HandleTypeDef* pcdHandle)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
   RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
   if(pcdHandle->Instance==USB_OTG_HS)
   {
@@ -103,6 +104,18 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef* pcdHandle)
   /** Enable USB Voltage detector
   */
     HAL_PWREx_EnableUSBVoltageDetector();
+
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    /**USB_OTG_HS GPIO Configuration
+    PA11     ------> USB_OTG_HS_DM
+    PA12     ------> USB_OTG_HS_DP
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_11|GPIO_PIN_12;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
 
     /* Peripheral clock enable */
     __HAL_RCC_USB_OTG_HS_CLK_ENABLE();
