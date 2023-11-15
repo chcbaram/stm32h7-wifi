@@ -26,7 +26,7 @@ void cliCmd(cli_args_t *args);
 static bool is_init = false;
 static const uint8_t i2c_ch = _DEF_I2C1;
 static const uint8_t i2c_addr = 0x38;
-
+static uint8_t i2c_retry = 0;
 
 
 
@@ -79,10 +79,26 @@ bool pca9554RegRead(PCA9554Reg_t reg, uint8_t *p_data)
   uint8_t i2c_data = 0;
   
   lock();
-  ret = i2cReadByte(i2c_ch, i2c_addr, (uint8_t)reg, &i2c_data, 10);  
-  if (ret)
+  for (int i=0; i<2; i++)
   {
-    *p_data = i2c_data;
+    ret = i2cReadByte(i2c_ch, i2c_addr, (uint8_t)reg, &i2c_data, 10);  
+    if (ret)
+    {
+      *p_data = i2c_data;
+      break;
+    }  
+    else
+    {
+      if (i2c_retry < 3)
+      {
+        i2cRecovery(i2c_ch);
+        i2c_retry++;
+      }
+      else
+      {
+        break;
+      }
+    }
   }
   unLock();
 
