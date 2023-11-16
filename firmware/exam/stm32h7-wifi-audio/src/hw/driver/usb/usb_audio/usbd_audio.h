@@ -40,10 +40,11 @@ extern "C" {
 /** @defgroup USBD_AUDIO_Exported_Defines
   * @{
   */
-#ifndef USBD_AUDIO_FREQ
+
 /* AUDIO Class Config */
-#define USBD_AUDIO_FREQ                               48000U
-#endif /* USBD_AUDIO_FREQ */
+#define USBD_AUDIO_FREQ                                48000U
+#define USBD_AUDIO_BIT_DEPTH                           2
+
 
 // See USB Device Class Definition for Audio Devices v1.0 p.77
  // max volume is 0dB, this is to avoid clipping
@@ -82,6 +83,7 @@ extern "C" {
 #define AUDIO_OUT_EP                                  0x01U
 #define AUDIO_IN_EP                                   0x81U
 
+#define SOF_RATE                                      0x02U
 
 #define USB_AUDIO_CONFIG_DESC_SIZ                     0x6DU
 #define AUDIO_INTERFACE_DESC_SIZE                     0x09U
@@ -146,8 +148,14 @@ extern "C" {
 #define AUDIO_OUT_TC                                  0x01U
 #define AUDIO_IN_TC                                   0x02U
 
-
+// Max packet size: (freq / 1000 + extra_samples) * channels * bytes_per_sample
+// e.g. 96kHz, 24bit : (96000 / 1000 + 1) * 2(stereo) * 3(24bit) = 582 bytes
 #define AUDIO_OUT_PACKET                              (uint16_t)(((USBD_AUDIO_FREQ * 2U * 2U) / 1000U))
+
+/* Input endpoint is for feedback. See USB 1.1 Spec, 5.10.4.2 Feedback. */
+#define AUDIO_IN_PACKET                               3U
+
+
 #define AUDIO_DEFAULT_VOLUME                          70U
 
 /* Number of sub-packets in the audio transfer buffer. You can modify this value but always make sure
@@ -194,17 +202,19 @@ typedef struct
 
 typedef struct
 {
-  uint32_t alt_setting;
-  uint8_t buffer[AUDIO_TOTAL_BUF_SIZE];
-  AUDIO_OffsetTypeDef offset;
-  uint8_t rd_enable;
-  uint16_t rd_ptr;
-  uint16_t wr_ptr;
+  uint32_t                  alt_setting;
+  uint8_t                   buffer[AUDIO_TOTAL_BUF_SIZE];
+  AUDIO_OffsetTypeDef       offset;
+  uint8_t                   rd_enable;
+  uint16_t                  rd_ptr;
+  uint16_t                  wr_ptr;
   
-  int16_t volume;
-  uint8_t volume_percent;
-  int32_t vol_3dB_shift;
-  uint8_t mute; // 0 = unmuted, 1 = muted  
+  uint32_t                  freq;  
+  uint32_t                  bit_depth;
+  int16_t                   volume;
+  uint8_t                   volume_percent;
+  int32_t                   vol_3dB_shift;
+  uint8_t                   mute;           // 0 = unmuted, 1 = muted  
   USBD_AUDIO_ControlTypeDef control;
 } USBD_AUDIO_HandleTypeDef;
 
