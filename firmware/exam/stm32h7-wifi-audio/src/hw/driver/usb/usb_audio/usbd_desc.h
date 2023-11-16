@@ -25,9 +25,9 @@
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
-#define         DEVICE_ID1          (0x5C001000)
-#define         DEVICE_ID2          (0x5C001004)
-#define         DEVICE_ID3          (0x5C001008)
+#define         DEVICE_ID1          (UID_BASE)
+#define         DEVICE_ID2          (UID_BASE + 0x4)
+#define         DEVICE_ID3          (UID_BASE + 0x8)
 
 #define  USB_SIZ_STRING_SERIAL       0x1A
 /* Exported macro ------------------------------------------------------------*/
