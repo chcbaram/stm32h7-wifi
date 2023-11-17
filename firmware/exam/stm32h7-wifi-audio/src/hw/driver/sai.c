@@ -224,6 +224,11 @@ uint32_t saiAvailableForWrite(uint8_t ch)
   return mixerAvailableForWrite(&mixer, ch);
 }
 
+uint32_t saiAvailableForRead(uint8_t ch)
+{
+  return mixerAvailableForRead(&mixer, ch);
+}
+
 bool saiWrite(uint8_t ch, int16_t *p_data, uint32_t length)
 {
   return mixerWrite(&mixer, ch, p_data, length);

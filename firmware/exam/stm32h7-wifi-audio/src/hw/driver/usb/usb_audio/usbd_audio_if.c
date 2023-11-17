@@ -32,7 +32,7 @@ static int8_t Audio_MuteCtl(uint8_t cmd);
 static int8_t Audio_PeriodicTC(uint8_t *pbuf, uint32_t size, uint8_t cmd);
 static int8_t Audio_GetState(void);
 static int8_t Audio_Receive(uint8_t *pbuf, uint32_t size);
-int8_t Audio_ReceiveReady(void);
+static int8_t Audio_GetBufferLevel(uint8_t *percent);
 
 
 /* Private variables --------------------------------------------------------- */
@@ -45,7 +45,8 @@ USBD_AUDIO_ItfTypeDef USBD_AUDIO_fops = {
   Audio_MuteCtl,
   Audio_PeriodicTC,
   Audio_GetState,
-  Audio_Receive
+  Audio_Receive,
+  Audio_GetBufferLevel,
 };
 
 
@@ -85,8 +86,7 @@ uint8_t Audio_Sof(USBD_HandleTypeDef *pdev)
   */
 static int8_t Audio_DeInit(uint32_t options)
 {
-  logPrintf("Audio_DeInit()\n");
-  logPrintf("  options : \n", options);
+  logPrintf("Audio_DeInit(%d)\n", options);
   return 0;
 }
 
@@ -176,7 +176,31 @@ int8_t Audio_Receive(uint8_t *pbuf, uint32_t size)
 {
   saiWrite(sai_ch, (int16_t *)pbuf, size/2);
 
-  // logPrintf("%d\n", saiAvailableForWrite(sai_ch));
+
+  // static uint8_t cnt = 0;
+  // if (cnt%8 == 0)
+  // {
+  //   uint8_t percent = 0;
+
+  //   Audio_GetBufferLevel(&percent);
+  //   logPrintf("buf level : %02d %%\n", percent);
+  // }
+  // cnt++;
+
   return (int8_t)USBD_OK;
 }
 
+static int8_t Audio_GetBufferLevel(uint8_t *percent)
+{
+  uint16_t total_len;
+  uint16_t empty_len;
+  uint8_t  buf_level;
+
+  empty_len = saiAvailableForWrite(sai_ch);
+  total_len = empty_len + saiAvailableForRead(sai_ch);
+
+  buf_level = empty_len *100 / total_len;
+  *percent = buf_level;
+
+  return (int8_t)USBD_OK;
+}

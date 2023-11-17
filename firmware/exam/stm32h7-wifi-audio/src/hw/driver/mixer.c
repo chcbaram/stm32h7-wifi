@@ -195,6 +195,17 @@ uint32_t mixerAvailableForWrite(mixer_t *p_mixer, uint8_t ch)
   return wr_len;
 }
 
+uint32_t mixerAvailableForRead(mixer_t *p_mixer, uint8_t ch)
+{
+  uint32_t rx_len;
+
+  if (ch >= MIXER_MAX_CH) return 0;
+
+  rx_len = mixerBufAvailable(p_mixer, ch);
+
+  return rx_len;
+}
+
 bool mixerIsEmpty(mixer_t *p_mixer, uint8_t ch)
 {
   if (mixerBufAvailable(p_mixer, ch) > 0) 

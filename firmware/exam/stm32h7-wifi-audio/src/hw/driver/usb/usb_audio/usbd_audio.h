@@ -42,6 +42,7 @@ extern "C" {
   */
 
 /* AUDIO Class Config */
+#define USBD_AUDIO_FREQ_MAX                            96000U
 #define USBD_AUDIO_FREQ                                48000U
 #define USBD_AUDIO_BIT_DEPTH                           2
 
@@ -84,7 +85,6 @@ extern "C" {
 #define AUDIO_IN_EP                                   0x81U
 
 #define SOF_RATE                                      0x02U
-#define SOF_RATE_MS                                   4       // 2^SOF_RATE 
 
 #define USB_AUDIO_CONFIG_DESC_SIZ                     0x6DU
 #define AUDIO_INTERFACE_DESC_SIZE                     0x09U
@@ -151,7 +151,7 @@ extern "C" {
 
 // Max packet size: (freq / 1000 + extra_samples) * channels * bytes_per_sample
 // e.g. 96kHz, 24bit : (96000 / 1000 + 1) * 2(stereo) * 3(24bit) = 582 bytes
-#define AUDIO_OUT_PACKET                              (uint16_t)(((USBD_AUDIO_FREQ * 2U * 2U) / 1000U))
+#define AUDIO_OUT_PACKET                              (uint16_t)(((USBD_AUDIO_FREQ_MAX * 2U * 2U) / 1000U))
 
 /* Input endpoint is for feedback. See USB 1.1 Spec, 5.10.4.2 Feedback. */
 #define AUDIO_IN_PACKET                               3U
@@ -216,6 +216,10 @@ typedef struct
   uint8_t                   volume_percent;
   int32_t                   vol_3dB_shift;
   uint8_t                   mute;           // 0 = unmuted, 1 = muted  
+
+  uint32_t                  fb_normal;
+  uint32_t                  fb_target;
+
   USBD_AUDIO_ControlTypeDef control;
 } USBD_AUDIO_HandleTypeDef;
 
@@ -230,6 +234,7 @@ typedef struct
   int8_t (*PeriodicTC)(uint8_t *pbuf, uint32_t size, uint8_t cmd);
   int8_t (*GetState)(void);
   int8_t (*Receive)(uint8_t *pbuf, uint32_t size);
+  int8_t (*GetBufferLevel)(uint8_t *percent);
 } USBD_AUDIO_ItfTypeDef;
 
 /*

@@ -48,6 +48,7 @@ int32_t mixerGetVolume(mixer_t *p_mixer);
 
 uint32_t mixerAvailable(mixer_t *p_mixer);
 uint32_t mixerAvailableForWrite(mixer_t *p_mixer, uint8_t ch);
+uint32_t mixerAvailableForRead(mixer_t *p_mixer, uint8_t ch);
 int8_t   mixerGetEmptyChannel(mixer_t *p_mixer);
 int8_t   mixerGetValidChannel(mixer_t *p_mixer, uint32_t length);
 

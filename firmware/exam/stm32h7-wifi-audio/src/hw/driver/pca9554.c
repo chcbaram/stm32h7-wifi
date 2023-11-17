@@ -85,6 +85,7 @@ bool pca9554RegRead(PCA9554Reg_t reg, uint8_t *p_data)
     if (ret)
     {
       *p_data = i2c_data;
+      i2c_retry = 0;
       break;
     }  
     else

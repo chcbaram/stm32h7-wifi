@@ -85,7 +85,7 @@
 
 #define _USE_HW_MIXER
 #define      HW_MIXER_MAX_CH        4
-#define      HW_MIXER_MAX_BUF_LEN   (48*2*4*4) // 48Khz * Stereo * 4ms * 2
+#define      HW_MIXER_MAX_BUF_LEN   (48*2*4*4) // 48Khz * Stereo * 4ms * 4
 
 #define _USE_HW_ESP
 #define      HW_ESP_UART_CH         HW_UART_CH_ESP
