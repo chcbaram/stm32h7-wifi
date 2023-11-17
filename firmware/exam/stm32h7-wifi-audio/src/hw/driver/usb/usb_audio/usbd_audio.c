@@ -103,7 +103,7 @@ EndBSPDependencies */
 #define USB_SOF_NUMBER() ((((USB_OTG_DeviceTypeDef *)((uint32_t )USB_OTG_HS + USB_OTG_DEVICE_BASE))->DSTS&USB_OTG_DSTS_FNSOF)>>USB_OTG_DSTS_FNSOF_Pos)
 
 
-#define USBD_AUDIO_LOG     1
+#define USBD_AUDIO_LOG     0
 
 #if (USBD_AUDIO_LOG > 0)
 #define AUDIO_Log(...) logPrintf(__VA_ARGS__);
@@ -1136,10 +1136,12 @@ static uint8_t AUDIO_UpdateFeedbackFreq(USBD_HandleTypeDef *pdev)
   if (buf_level_percent > 50)
   {
     haudio->fb_target = haudio->fb_normal + fb_gain;
+    // haudio->fb_target = AUDIO_GetFeedbackValue(haudio->freq + 1000);
   }
   else if (buf_level_percent < 50)
   {
     haudio->fb_target = haudio->fb_normal - fb_gain;
+    // haudio->fb_target = AUDIO_GetFeedbackValue(haudio->freq - 1000);
   }
   else
   {

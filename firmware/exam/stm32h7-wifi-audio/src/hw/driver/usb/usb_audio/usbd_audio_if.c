@@ -178,7 +178,7 @@ int8_t Audio_Receive(uint8_t *pbuf, uint32_t size)
 
 
   // static uint8_t cnt = 0;
-  // if (cnt%8 == 0)
+  // if (cnt%16 == 0)
   // {
   //   uint8_t percent = 0;
 
