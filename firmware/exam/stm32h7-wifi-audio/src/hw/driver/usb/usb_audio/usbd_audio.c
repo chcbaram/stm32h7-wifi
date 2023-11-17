@@ -148,7 +148,7 @@ static uint8_t  AUDIO_SendFeedbackFreq(USBD_HandleTypeDef *pdev);
 static uint32_t AUDIO_GetFeedbackValue(uint32_t rate);
 static int32_t  AUDIO_Get_Vol3dB_Shift(int16_t volume);
 static int32_t  AUDIO_Volume_Ctrl(int32_t sample, int32_t shift_3dB);
-
+static uint8_t  AUDIO_UpdateFeedbackFreq(USBD_HandleTypeDef *pdev);
 
 /**
   * @}
@@ -369,6 +369,9 @@ volatile static uint32_t data_in_count = 0;
 volatile static uint32_t data_in_rate = 0;
 
 volatile static uint32_t sof_count = 0;
+// FNSOF is critical for frequency changing to work
+volatile uint32_t fnsof = 0;
+
 
 /**
   * @}
@@ -756,7 +759,19 @@ static uint8_t USBD_AUDIO_SOF(USBD_HandleTypeDef *pdev)
     if (sof_count >= (1<<SOF_RATE))
     {
       sof_count = 0;
-      AUDIO_SendFeedbackFreq(pdev);
+      AUDIO_UpdateFeedbackFreq(pdev);
+    }
+
+    if (is_fb_tx_req == false)
+    {
+      USB_OTG_GlobalTypeDef* *USBx_BASE = pdev->pData;
+      uint32_t volatile fnsof_new = (USBx_DEVICE->DSTS & USB_OTG_DSTS_FNSOF) >> 8;      
+      
+      if ((fnsof & 0x1) == (fnsof_new & 0x1)) 
+      {
+        AUDIO_SendFeedbackFreq(pdev);
+        is_fb_tx_req = true;
+      }
     }
   }
   return (uint8_t)USBD_OK;
@@ -776,8 +791,18 @@ static uint8_t USBD_AUDIO_SOF(USBD_HandleTypeDef *pdev)
   */
 static uint8_t USBD_AUDIO_IsoINIncomplete(USBD_HandleTypeDef *pdev, uint8_t epnum)
 {
-  USBD_LL_FlushEP(pdev,AUDIO_IN_EP);    
-  AUDIO_SendFeedbackFreq(pdev);
+  USB_OTG_GlobalTypeDef* *USBx_BASE = pdev->pData;
+  
+  fnsof = (USBx_DEVICE->DSTS & USB_OTG_DSTS_FNSOF) >> 8;
+
+
+
+  if (is_fb_tx_req)
+  {
+    is_fb_tx_req = false;
+    USBD_LL_FlushEP(pdev,AUDIO_IN_EP);  
+  }
+  data_in_count++;
   return (uint8_t)USBD_OK;
 }
 
@@ -821,8 +846,9 @@ static uint8_t USBD_AUDIO_DataIn(USBD_HandleTypeDef *pdev, uint8_t epnum)
 
   if (epnum == (AUDIO_IN_EP & 0xF)) 
   {
-    data_in_count++;
+    // data_in_count++;
     sof_count = 0;
+    is_fb_tx_req = false;
   }
   return (uint8_t)USBD_OK;
 }
@@ -1095,6 +1121,34 @@ static  uint32_t AUDIO_GetFeedbackValue(uint32_t rate)
   return ret;
  }
 
+static uint8_t AUDIO_UpdateFeedbackFreq(USBD_HandleTypeDef *pdev)
+{
+  USBD_AUDIO_HandleTypeDef *haudio;
+  haudio = (USBD_AUDIO_HandleTypeDef *)pdev->pClassDataCmsit[pdev->classId]; 
+
+  uint8_t  buf_level_percent = 50;
+  uint32_t fb_gain;
+
+  ((USBD_AUDIO_ItfTypeDef *)pdev->pUserData[pdev->classId])->GetBufferLevel(&buf_level_percent);
+
+  fb_gain = AUDIO_GetFeedbackValue(1000); // 1Khz
+
+  if (buf_level_percent > 50)
+  {
+    haudio->fb_target = haudio->fb_normal + fb_gain;
+  }
+  else if (buf_level_percent < 50)
+  {
+    haudio->fb_target = haudio->fb_normal - fb_gain;
+  }
+  else
+  {
+    haudio->fb_target = haudio->fb_normal;
+  }
+
+  return USBD_OK;
+}
+
 static uint8_t AUDIO_SendFeedbackFreq(USBD_HandleTypeDef *pdev)
 {
   USBD_AUDIO_HandleTypeDef *haudio;
@@ -1121,7 +1175,7 @@ static uint8_t AUDIO_SendFeedbackFreq(USBD_HandleTypeDef *pdev)
   // }
 
   USBD_LL_Transmit(pdev, AUDIO_IN_EP, (uint8_t *)&haudio->fb_target, 3);
-  sof_count = 0;
+  // sof_count = 0;
   return USBD_OK;
 }
 
@@ -1190,6 +1244,7 @@ static void AUDIO_OUT_Restart(USBD_HandleTypeDef* pdev)
   /* Prepare Out endpoint to receive 1st packet */
   (void)USBD_LL_PrepareReceive(pdev, AUDIO_OUT_EP, haudio->buffer, AUDIO_OUT_PACKET);
   
+  is_fb_tx_req = false;
   is_init = true;
 }
 
