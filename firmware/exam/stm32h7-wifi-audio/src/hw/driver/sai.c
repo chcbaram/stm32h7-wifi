@@ -41,6 +41,7 @@ static volatile bool     sai_frame_update = false;
 static int16_t  sai_frame_buf[2][SAI_BUF_FRAME_LEN];
 const int16_t   sai_frame_buf_zero[SAI_BUF_FRAME_LEN] = {0, };
 static uint32_t sai_frame_len = 0;
+static uint32_t sai_zero_cnt = 0;
 
 static mixer_t   mixer;
 static int16_t   sai_volume = 100;
@@ -335,6 +336,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hi2s)
   {
     HAL_SAI_Transmit_DMA(hi2s, (uint8_t *)sai_frame_buf_zero, sai_frame_len);
     is_busy = false;
+    sai_zero_cnt++;
   }
 }
 
@@ -557,6 +559,25 @@ void cliSai(cli_args_t *args)
     ret = true;
   }
 
+  if (args->argc == 1 && args->isStr(0, "show") == true)
+  {
+    uint32_t pre_time;
+
+    sai_zero_cnt = 0;
+    pre_time = millis();
+    while(cliKeepLoop())
+    {
+      if (millis()-pre_time >= 1000)
+      {
+        pre_time = millis();
+        cliPrintf("sai zero cnt : %d\n", sai_zero_cnt);
+        sai_zero_cnt = 0;
+      }
+      delay(1);
+    }
+    ret = true;
+  }
+
   if (args->argc == 1 && args->isStr(0, "volume"))
   {
     cliPrintf("sai volume: %d\n", saiGetVolume()); 
@@ -693,6 +714,7 @@ void cliSai(cli_args_t *args)
   if (ret != true)
   {
     cliPrintf("sai info\n");
+    cliPrintf("sai show\n");
     cliPrintf("sai volume [0~100]\n");
     cliPrintf("sai melody\n");
     cliPrintf("sai beep freq time_ms\n");
