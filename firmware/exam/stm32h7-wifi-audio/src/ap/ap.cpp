@@ -1,7 +1,7 @@
 #include "ap.h"
 
 
-
+extern "C" void USBD_AUDIO_INFO(void);
 
 
 void apInit(void)
@@ -13,6 +13,8 @@ void apUpdate(void)
 {
   powerUpdate();
   // sdUpdate();
+
+  USBD_AUDIO_INFO();
 }
 
 void apMain(void)

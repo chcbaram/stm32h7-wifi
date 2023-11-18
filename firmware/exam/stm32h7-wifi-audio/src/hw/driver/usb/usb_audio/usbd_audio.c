@@ -103,7 +103,7 @@ EndBSPDependencies */
 #define USB_SOF_NUMBER() ((((USB_OTG_DeviceTypeDef *)((uint32_t )USB_OTG_HS + USB_OTG_DEVICE_BASE))->DSTS&USB_OTG_DSTS_FNSOF)>>USB_OTG_DSTS_FNSOF_Pos)
 
 
-#define USBD_AUDIO_LOG     0
+#define USBD_AUDIO_LOG     1
 
 #if (USBD_AUDIO_LOG > 0)
 #define AUDIO_Log(...) logPrintf(__VA_ARGS__);
@@ -361,16 +361,23 @@ __ALIGN_BEGIN static uint8_t USBD_AUDIO_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIE
 };
 
 volatile static bool is_init  = false;
-volatile static bool is_fb_tx_req  = false;
 volatile static uint32_t rx_count = 0;
 volatile static uint32_t rx_rate = 0;
+volatile static uint32_t fb_send_rate_count = 0;
 
-volatile static uint32_t data_in_count = 0;
-volatile static uint32_t data_in_rate = 0;
 
-volatile static uint32_t sof_count = 0;
-// FNSOF is critical for frequency changing to work
-volatile uint32_t fnsof = 0;
+enum
+{
+  DATA_RATE_ISO_IN_INCOMPLETE,
+  DATA_RATE_ISO_OUT_INCOMPLETE,
+  DATA_RATE_DATA_IN,
+  DATA_RATE_DATA_OUT,
+  DATA_RATE_FEEDBACK,
+  DATA_RATE_MAX
+};
+
+volatile static uint32_t data_in_count[DATA_RATE_MAX] = {0, };
+volatile static uint32_t data_in_rate[DATA_RATE_MAX] = {0, };
 
 
 /**
@@ -419,8 +426,6 @@ static uint8_t USBD_AUDIO_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
   USBD_LL_FlushEP(pdev, AUDIO_IN_EP);
 
 
-  is_fb_tx_req  = false;
-  
 
   haudio->alt_setting = 0U;
   haudio->offset = AUDIO_OFFSET_UNKNOWN;
@@ -473,9 +478,6 @@ static uint8_t USBD_AUDIO_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
   /* Close EP IN */
   USBD_LL_CloseEP(pdev, AUDIO_IN_EP);
   pdev->ep_in[AUDIO_IN_EP & 0xFU].is_used = 0U;
-
-
-  is_fb_tx_req  = false;
 
 
   /* DeInit  physical Interface components */
@@ -755,32 +757,55 @@ static uint8_t USBD_AUDIO_SOF(USBD_HandleTypeDef *pdev)
 { 
   if (is_init)
   {
-    sof_count++;
-    if (sof_count >= (1<<SOF_RATE))
+    static uint16_t fb_update_cnt = 0;
+
+    fb_update_cnt++;
+    if (fb_update_cnt >= (1<<SOF_RATE))
     {
-      sof_count = 0;
+      fb_update_cnt = 0;
       AUDIO_UpdateFeedbackFreq(pdev);
     }
 
-    if (is_fb_tx_req == false)
+    fb_send_rate_count++;
+    if (fb_send_rate_count >= (1<<SOF_RATE))
     {
-      USB_OTG_GlobalTypeDef* *USBx_BASE = pdev->pData;
-      uint32_t volatile fnsof_new = (USBx_DEVICE->DSTS & USB_OTG_DSTS_FNSOF) >> 8;      
-      
-      if ((fnsof & 0x1) == (fnsof_new & 0x1)) 
-      {
-        AUDIO_SendFeedbackFreq(pdev);
-        is_fb_tx_req = true;
-      }
+      fb_send_rate_count = 0;
+      AUDIO_SendFeedbackFreq(pdev);
     }
+
+
+    static uint32_t sof_log_cnt = 0;
+    sof_log_cnt++;
+    if (sof_log_cnt >= 1000)
+    {
+      sof_log_cnt = 0;
+      for (int i=0; i<DATA_RATE_MAX; i++)
+      {
+        data_in_rate[i] = data_in_count[i];
+        data_in_count[i] = 0;
+      }
+    }    
   }
   return (uint8_t)USBD_OK;
 }
 
+void USBD_AUDIO_INFO(void)
+{
+  static uint32_t pre_time = 0;
 
-#define USB_CLEAR_INCOMPLETE_IN_EP(ep_addr)     if((((ep_addr) & 0x80U) == 0x80U)){  \
-            USB_DIEPCTL(ep_addr) |= (USB_OTG_DIEPCTL_EPDIS | USB_OTG_DIEPCTL_SNAK);  \
-                                         };
+  if (millis()-pre_time >= 1000)
+  {
+    pre_time = millis();
+    AUDIO_Log("%d, ISO_IN %3d ISO_OUT %3d IN %3d OUT %-4d FD %d\n", 
+      rx_rate/4, 
+      data_in_rate[DATA_RATE_ISO_IN_INCOMPLETE],
+      data_in_rate[DATA_RATE_ISO_OUT_INCOMPLETE],
+      data_in_rate[DATA_RATE_DATA_IN],
+      data_in_rate[DATA_RATE_DATA_OUT],
+      data_in_rate[DATA_RATE_FEEDBACK]
+      );
+  }
+}
 
 /**
   * @brief  USBD_AUDIO_IsoINIncomplete
@@ -791,18 +816,9 @@ static uint8_t USBD_AUDIO_SOF(USBD_HandleTypeDef *pdev)
   */
 static uint8_t USBD_AUDIO_IsoINIncomplete(USBD_HandleTypeDef *pdev, uint8_t epnum)
 {
-  USB_OTG_GlobalTypeDef* *USBx_BASE = pdev->pData;
-  
-  fnsof = (USBx_DEVICE->DSTS & USB_OTG_DSTS_FNSOF) >> 8;
+  USBD_LL_FlushEP(pdev, AUDIO_IN_EP);
 
-
-
-  if (is_fb_tx_req)
-  {
-    is_fb_tx_req = false;
-    USBD_LL_FlushEP(pdev,AUDIO_IN_EP);  
-  }
-  data_in_count++;
+  data_in_count[DATA_RATE_ISO_IN_INCOMPLETE]++;
   return (uint8_t)USBD_OK;
 }
 
@@ -830,6 +846,7 @@ static uint8_t USBD_AUDIO_IsoOutIncomplete(USBD_HandleTypeDef *pdev, uint8_t epn
   packet_length = (uint16_t)USBD_LL_GetRxDataSize(pdev, epnum);
 	(void)USBD_LL_PrepareReceive(pdev, AUDIO_OUT_EP, haudio->buffer, packet_length);
 
+  data_in_count[DATA_RATE_ISO_OUT_INCOMPLETE]++;
   return (uint8_t)USBD_OK;
 }
 
@@ -846,10 +863,10 @@ static uint8_t USBD_AUDIO_DataIn(USBD_HandleTypeDef *pdev, uint8_t epnum)
 
   if (epnum == (AUDIO_IN_EP & 0xF)) 
   {
-    // data_in_count++;
-    sof_count = 0;
-    is_fb_tx_req = false;
+    fb_send_rate_count = 0;
   }
+
+  data_in_count[DATA_RATE_DATA_IN]++;
   return (uint8_t)USBD_OK;
 }
 
@@ -896,14 +913,11 @@ static uint8_t USBD_AUDIO_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum)
       pre_time = millis();
       rx_rate = rx_count;
       rx_count = 0;
-
-      data_in_rate = data_in_count;
-      data_in_count = 0;
-
-
-      AUDIO_Log("rx_rate : %d, %d \n", rx_rate/4, data_in_rate);
     }
   }
+
+  data_in_count[DATA_RATE_DATA_OUT]++;
+
   return (uint8_t)USBD_OK;
 }
 
@@ -1178,6 +1192,8 @@ static uint8_t AUDIO_SendFeedbackFreq(USBD_HandleTypeDef *pdev)
 
   USBD_LL_Transmit(pdev, AUDIO_IN_EP, (uint8_t *)&haudio->fb_target, 3);
   // sof_count = 0;
+
+  data_in_count[DATA_RATE_FEEDBACK]++;
   return USBD_OK;
 }
 
@@ -1187,7 +1203,6 @@ static uint8_t AUDIO_SendFeedbackFreq(USBD_HandleTypeDef *pdev)
  */
 static void AUDIO_OUT_Stop(USBD_HandleTypeDef* pdev)
 {
-  is_fb_tx_req = false;
   is_init = false;
 
   
@@ -1217,7 +1232,6 @@ static void AUDIO_OUT_Restart(USBD_HandleTypeDef* pdev)
 
   AUDIO_Log("AUDIO_OUT_Restart() - IN\n");
 
-  is_fb_tx_req = false;
   USBD_LL_FlushEP(pdev, AUDIO_IN_EP);
   USBD_LL_FlushEP(pdev, AUDIO_OUT_EP);
 
@@ -1245,8 +1259,7 @@ static void AUDIO_OUT_Restart(USBD_HandleTypeDef* pdev)
 
   /* Prepare Out endpoint to receive 1st packet */
   (void)USBD_LL_PrepareReceive(pdev, AUDIO_OUT_EP, haudio->buffer, AUDIO_OUT_PACKET);
-  
-  is_fb_tx_req = false;
+
   is_init = true;
 }
 
