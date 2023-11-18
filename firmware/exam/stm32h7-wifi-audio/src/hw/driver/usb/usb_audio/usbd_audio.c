@@ -148,7 +148,7 @@ static uint8_t  AUDIO_SendFeedbackFreq(USBD_HandleTypeDef *pdev);
 static uint32_t AUDIO_GetFeedbackValue(uint32_t rate);
 static int32_t  AUDIO_Get_Vol3dB_Shift(int16_t volume);
 static int32_t  AUDIO_Volume_Ctrl(int32_t sample, int32_t shift_3dB);
-
+static uint8_t  AUDIO_UpdateFeedbackFreq(USBD_HandleTypeDef *pdev);
 
 /**
   * @}
@@ -361,14 +361,22 @@ __ALIGN_BEGIN static uint8_t USBD_AUDIO_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIE
 };
 
 volatile static bool is_init  = false;
-volatile static bool is_fb_tx_req  = false;
 volatile static uint32_t rx_count = 0;
 volatile static uint32_t rx_rate = 0;
 
-volatile static uint32_t data_in_count = 0;
-volatile static uint32_t data_in_rate = 0;
+enum
+{
+  DATA_RATE_ISO_IN_INCOMPLETE,
+  DATA_RATE_ISO_OUT_INCOMPLETE,
+  DATA_RATE_DATA_IN,
+  DATA_RATE_DATA_OUT,
+  DATA_RATE_FEEDBACK,
+  DATA_RATE_MAX
+};
 
-volatile static uint32_t sof_count = 0;
+volatile static uint32_t data_in_count[DATA_RATE_MAX] = {0, };
+volatile static uint32_t data_in_rate[DATA_RATE_MAX] = {0, };
+
 
 /**
   * @}
@@ -416,8 +424,6 @@ static uint8_t USBD_AUDIO_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
   USBD_LL_FlushEP(pdev, AUDIO_IN_EP);
 
 
-  is_fb_tx_req  = false;
-  
 
   haudio->alt_setting = 0U;
   haudio->offset = AUDIO_OFFSET_UNKNOWN;
@@ -470,9 +476,6 @@ static uint8_t USBD_AUDIO_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
   /* Close EP IN */
   USBD_LL_CloseEP(pdev, AUDIO_IN_EP);
   pdev->ep_in[AUDIO_IN_EP & 0xFU].is_used = 0U;
-
-
-  is_fb_tx_req  = false;
 
 
   /* DeInit  physical Interface components */
@@ -729,6 +732,7 @@ static uint8_t USBD_AUDIO_EP0_RxReady(USBD_HandleTypeDef *pdev)
 
   return (uint8_t)USBD_OK;
 }
+
 /**
   * @brief  USBD_AUDIO_EP0_TxReady
   *         handle EP0 TRx Ready event
@@ -742,6 +746,7 @@ static uint8_t USBD_AUDIO_EP0_TxReady(USBD_HandleTypeDef *pdev)
   /* Only OUT control data are processed */
   return (uint8_t)USBD_OK;
 }
+
 /**
   * @brief  USBD_AUDIO_SOF
   *         handle SOF event
@@ -752,20 +757,38 @@ static uint8_t USBD_AUDIO_SOF(USBD_HandleTypeDef *pdev)
 { 
   if (is_init)
   {
-    sof_count++;
-    if (sof_count >= (1<<SOF_RATE))
+    static uint32_t sof_log_cnt = 0;
+    sof_log_cnt++;
+    if (sof_log_cnt >= 1000)
     {
-      sof_count = 0;
-      AUDIO_SendFeedbackFreq(pdev);
-    }
+      sof_log_cnt = 0;
+      for (int i=0; i<DATA_RATE_MAX; i++)
+      {
+        data_in_rate[i] = data_in_count[i];
+        data_in_count[i] = 0;
+      }
+    }    
   }
   return (uint8_t)USBD_OK;
 }
 
+void USBD_AUDIO_INFO(void)
+{
+  static uint32_t pre_time = 0;
 
-#define USB_CLEAR_INCOMPLETE_IN_EP(ep_addr)     if((((ep_addr) & 0x80U) == 0x80U)){  \
-            USB_DIEPCTL(ep_addr) |= (USB_OTG_DIEPCTL_EPDIS | USB_OTG_DIEPCTL_SNAK);  \
-                                         };
+  if (millis()-pre_time >= 1000)
+  {
+    pre_time = millis();
+    AUDIO_Log("%d, ISO_IN %3d ISO_OUT %3d IN %3d OUT %-4d FD %d\n", 
+      rx_rate/4, 
+      data_in_rate[DATA_RATE_ISO_IN_INCOMPLETE],
+      data_in_rate[DATA_RATE_ISO_OUT_INCOMPLETE],
+      data_in_rate[DATA_RATE_DATA_IN],
+      data_in_rate[DATA_RATE_DATA_OUT],
+      data_in_rate[DATA_RATE_FEEDBACK]
+      );
+  }
+}
 
 /**
   * @brief  USBD_AUDIO_IsoINIncomplete
@@ -776,8 +799,14 @@ static uint8_t USBD_AUDIO_SOF(USBD_HandleTypeDef *pdev)
   */
 static uint8_t USBD_AUDIO_IsoINIncomplete(USBD_HandleTypeDef *pdev, uint8_t epnum)
 {
-  USBD_LL_FlushEP(pdev,AUDIO_IN_EP);    
-  AUDIO_SendFeedbackFreq(pdev);
+
+  if (epnum == (AUDIO_IN_EP & 0xF)) 
+  {  
+    USBD_LL_FlushEP(pdev, AUDIO_IN_EP);
+    AUDIO_SendFeedbackFreq(pdev);
+  }
+
+  data_in_count[DATA_RATE_ISO_IN_INCOMPLETE]++;
   return (uint8_t)USBD_OK;
 }
 
@@ -799,12 +828,13 @@ static uint8_t USBD_AUDIO_IsoOutIncomplete(USBD_HandleTypeDef *pdev, uint8_t epn
   }
   haudio = (USBD_AUDIO_HandleTypeDef *)pdev->pClassDataCmsit[pdev->classId];
 
-	USBD_LL_FlushEP(pdev, AUDIO_OUT_EP);
+  USBD_LL_FlushEP(pdev, AUDIO_OUT_EP);
 
 	/* Prepare Out endpoint to receive next audio packet */
   packet_length = (uint16_t)USBD_LL_GetRxDataSize(pdev, epnum);
 	(void)USBD_LL_PrepareReceive(pdev, AUDIO_OUT_EP, haudio->buffer, packet_length);
 
+  data_in_count[DATA_RATE_ISO_OUT_INCOMPLETE]++;
   return (uint8_t)USBD_OK;
 }
 
@@ -821,9 +851,11 @@ static uint8_t USBD_AUDIO_DataIn(USBD_HandleTypeDef *pdev, uint8_t epnum)
 
   if (epnum == (AUDIO_IN_EP & 0xF)) 
   {
-    data_in_count++;
-    sof_count = 0;
+    AUDIO_UpdateFeedbackFreq(pdev);
+    AUDIO_SendFeedbackFreq(pdev);
   }
+
+  data_in_count[DATA_RATE_DATA_IN]++;
   return (uint8_t)USBD_OK;
 }
 
@@ -870,14 +902,11 @@ static uint8_t USBD_AUDIO_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum)
       pre_time = millis();
       rx_rate = rx_count;
       rx_count = 0;
-
-      data_in_rate = data_in_count;
-      data_in_count = 0;
-
-
-      AUDIO_Log("rx_rate : %d, %d \n", rx_rate/4, data_in_rate);
     }
   }
+
+  data_in_count[DATA_RATE_DATA_OUT]++;
+
   return (uint8_t)USBD_OK;
 }
 
@@ -1095,6 +1124,43 @@ static  uint32_t AUDIO_GetFeedbackValue(uint32_t rate)
   return ret;
  }
 
+static uint8_t AUDIO_UpdateFeedbackFreq(USBD_HandleTypeDef *pdev)
+{
+  USBD_AUDIO_HandleTypeDef *haudio;
+  haudio = (USBD_AUDIO_HandleTypeDef *)pdev->pClassDataCmsit[pdev->classId]; 
+
+  uint8_t  buf_level_percent = 50;
+  uint32_t fb_gain;
+
+
+  // 버퍼 사용량 가져오기 
+  ((USBD_AUDIO_ItfTypeDef *)pdev->pUserData[pdev->classId])->GetBufferLevel(&buf_level_percent);
+
+
+  // 주파수 보정은 100Hz 까지만 한다. 
+  // Mac에서 높은 주파수로 보정시 간헐적으로 끊김 현상 발생 
+  //
+  fb_gain = 100; // Hz
+
+
+  // 버퍼 사용량을 50%를 목표로 fb_gain 만끔 주파수를 조절한다. 
+  //
+  if (buf_level_percent > 50)
+  {
+    haudio->fb_target = AUDIO_GetFeedbackValue(haudio->freq_real + fb_gain);
+  }
+  else if (buf_level_percent < 50)
+  {
+    haudio->fb_target = AUDIO_GetFeedbackValue(haudio->freq_real - fb_gain);
+  }
+  else
+  {
+    haudio->fb_target = haudio->fb_normal;
+  }
+
+  return USBD_OK;
+}
+
 static uint8_t AUDIO_SendFeedbackFreq(USBD_HandleTypeDef *pdev)
 {
   USBD_AUDIO_HandleTypeDef *haudio;
@@ -1120,8 +1186,11 @@ static uint8_t AUDIO_SendFeedbackFreq(USBD_HandleTypeDef *pdev)
   //   haudio->fb_target = haudio->fb_normal;
   // }
 
+
   USBD_LL_Transmit(pdev, AUDIO_IN_EP, (uint8_t *)&haudio->fb_target, 3);
-  sof_count = 0;
+  // sof_count = 0;
+
+  data_in_count[DATA_RATE_FEEDBACK]++;
   return USBD_OK;
 }
 
@@ -1131,7 +1200,6 @@ static uint8_t AUDIO_SendFeedbackFreq(USBD_HandleTypeDef *pdev)
  */
 static void AUDIO_OUT_Stop(USBD_HandleTypeDef* pdev)
 {
-  is_fb_tx_req = false;
   is_init = false;
 
   
@@ -1161,7 +1229,6 @@ static void AUDIO_OUT_Restart(USBD_HandleTypeDef* pdev)
 
   AUDIO_Log("AUDIO_OUT_Restart() - IN\n");
 
-  is_fb_tx_req = false;
   USBD_LL_FlushEP(pdev, AUDIO_IN_EP);
   USBD_LL_FlushEP(pdev, AUDIO_OUT_EP);
 
@@ -1171,14 +1238,17 @@ static void AUDIO_OUT_Restart(USBD_HandleTypeDef* pdev)
   switch (haudio->freq) 
   {
     case 44100:
-      haudio->fb_normal = AUDIO_GetFeedbackValue(44100);
+      haudio->freq_real = 44100;
+      haudio->fb_normal = AUDIO_GetFeedbackValue(haudio->freq_real);
       break;
     case 48000:
-      haudio->fb_normal = AUDIO_GetFeedbackValue(48000);
+      haudio->freq_real = 48065;
+      haudio->fb_normal = AUDIO_GetFeedbackValue(haudio->freq_real);
       break;
     case 96000:
     default :
-      haudio->fb_normal = AUDIO_GetFeedbackValue(96000);
+      haudio->freq_real = 96000;
+      haudio->fb_normal = AUDIO_GetFeedbackValue(haudio->freq_real);
       break;
   }
   haudio->fb_target = haudio->fb_normal;
@@ -1189,7 +1259,10 @@ static void AUDIO_OUT_Restart(USBD_HandleTypeDef* pdev)
 
   /* Prepare Out endpoint to receive 1st packet */
   (void)USBD_LL_PrepareReceive(pdev, AUDIO_OUT_EP, haudio->buffer, AUDIO_OUT_PACKET);
+
   
+  AUDIO_SendFeedbackFreq(pdev);
+
   is_init = true;
 }
 

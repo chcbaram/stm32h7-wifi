@@ -211,6 +211,7 @@ typedef struct
   uint16_t                  wr_ptr;
   
   uint32_t                  freq;  
+  uint32_t                  freq_real;  
   uint32_t                  bit_depth;
   int16_t                   volume;
   uint8_t                   volume_percent;
