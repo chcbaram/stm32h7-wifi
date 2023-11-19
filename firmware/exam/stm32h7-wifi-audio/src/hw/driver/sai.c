@@ -327,6 +327,7 @@ void saiUpdateBuffer(uint8_t index)
   {
     memset(&sai_frame_buf[index * sai_frame_len], 0, sai_frame_len * 2);
     is_busy = false;
+    sai_zero_cnt++;
   }
 }
 
