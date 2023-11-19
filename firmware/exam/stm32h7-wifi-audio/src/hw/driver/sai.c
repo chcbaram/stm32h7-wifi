@@ -36,10 +36,7 @@ static bool is_busy = false;
 
 static uint32_t sai_sample_rate = SAI_SAMPLERATE_HZ;
 
-static volatile uint32_t sai_frame_cur_i = 0;
-static volatile bool     sai_frame_update = false;
-static int16_t  sai_frame_buf[2][SAI_BUF_FRAME_LEN];
-const int16_t   sai_frame_buf_zero[SAI_BUF_FRAME_LEN] = {0, };
+static int16_t  sai_frame_buf[SAI_BUF_FRAME_LEN * 2];
 static uint32_t sai_frame_len = 0;
 static uint32_t sai_zero_cnt = 0;
 
@@ -190,8 +187,8 @@ bool saiStart(void)
   bool ret = false;
   HAL_StatusTypeDef status;
 
-
-  status = HAL_SAI_Transmit_DMA(&hsai_BlockA1, (uint8_t *)sai_frame_buf_zero, sai_frame_len);
+  memset(sai_frame_buf, 0, sizeof(sai_frame_buf));
+  status = HAL_SAI_Transmit_DMA(&hsai_BlockA1, (uint8_t *)sai_frame_buf, sai_frame_len * 2);
   if (status == HAL_OK)
   {
     is_started = true;
@@ -207,6 +204,7 @@ bool saiStart(void)
 bool saiStop(void)
 {
   is_started = false;
+  HAL_SAI_DMAStop(&hsai_BlockA1);
   return true;
 }
 
@@ -318,35 +316,28 @@ bool saiSetVolume(int16_t volume)
   return true;
 }
 
-void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hi2s)
+void saiUpdateBuffer(uint8_t index)
 {
-  if (is_started != true)
-  {
-    return;
-  }
-
-  if (sai_frame_update)
-  {
-    HAL_SAI_Transmit_DMA(hi2s, (uint8_t *)sai_frame_buf[sai_frame_cur_i], sai_frame_len);
-    sai_frame_cur_i ^= 1;
-    sai_frame_update = false;
+  if (mixerAvailable(&mixer) >= sai_frame_len)
+  {    
+    mixerRead(&mixer, &sai_frame_buf[index * sai_frame_len], sai_frame_len);
     is_busy = true;
   }
   else
   {
-    HAL_SAI_Transmit_DMA(hi2s, (uint8_t *)sai_frame_buf_zero, sai_frame_len);
+    memset(&sai_frame_buf[index * sai_frame_len], 0, sai_frame_len * 2);
     is_busy = false;
-    sai_zero_cnt++;
   }
 }
 
 void HAL_SAI_TxHalfCpltCallback(SAI_HandleTypeDef *hi2s)
 {
-  if (mixerAvailable(&mixer) >= sai_frame_len)
-  {    
-    mixerRead(&mixer, sai_frame_buf[sai_frame_cur_i], sai_frame_len);
-    sai_frame_update = true;
-  }
+  saiUpdateBuffer(0);
+}
+
+void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hi2s)
+{
+  saiUpdateBuffer(1);
 }
 
 void HAL_SAI_ErrorCallback(SAI_HandleTypeDef *hi2s)
@@ -467,7 +458,7 @@ void HAL_SAI_MspInit(SAI_HandleTypeDef* saiHandle)
     hdma_sai1_a.Init.MemInc = DMA_MINC_ENABLE;
     hdma_sai1_a.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
     hdma_sai1_a.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
-    hdma_sai1_a.Init.Mode = DMA_NORMAL;
+    hdma_sai1_a.Init.Mode = DMA_CIRCULAR;
     hdma_sai1_a.Init.Priority = DMA_PRIORITY_LOW;
     hdma_sai1_a.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
     if (HAL_DMA_Init(&hdma_sai1_a) != HAL_OK)
