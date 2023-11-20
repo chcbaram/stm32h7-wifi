@@ -45,6 +45,10 @@ bool fatfsInit(void)
   return ret;
 }
 
+bool fatfsIsInit(void)
+{
+  return is_init;
+}
 
 #if CLI_USE(HW_FATFS)
 

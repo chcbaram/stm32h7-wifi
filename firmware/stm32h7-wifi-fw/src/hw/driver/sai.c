@@ -110,6 +110,8 @@ bool saiCfgLoad(void)
     ret = nvsSet(SAI_CFG_NAME, &sai_cfg, sizeof(sai_cfg));
     logPrintf("[NG] saiCfgLoad()\n");
   }
+  #else
+  sai_cfg.volume = sai_volume;
   #endif
 
   saiSetVolume(sai_cfg.volume);
