@@ -186,7 +186,7 @@ SECTIONS
     *(.non_cache)
     *(.non_cache*)   
     . = ALIGN(4);       
-  } >BUF AT> FLASH   
+  } >BUF 
 
 
   .noinit(NOLOAD) :
