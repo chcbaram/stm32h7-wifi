@@ -18,7 +18,7 @@
 #define _USE_HW_QSPI
 #define _USE_HW_PCA9554
 // #define _USE_HW_NVS
-// #define _USE_HW_SAI
+#define _USE_HW_SAI
 #define _USE_HW_FILES
 
 
@@ -108,15 +108,15 @@
 #define _USE_CLI_HW_PCA9554         0
 #define _USE_CLI_HW_QSPI            0
 #define _USE_CLI_HW_SD              0
-#define _USE_CLI_HW_BUZZER          0
+#define _USE_CLI_HW_BUZZER          1
 #define _USE_CLI_HW_UART            0
 #define _USE_CLI_HW_SPI_FLASH       0
-#define _USE_CLI_HW_FATFS           0
+#define _USE_CLI_HW_FATFS           1
 #define _USE_CLI_HW_FS              0
-#define _USE_CLI_HW_SAI             0
-#define _USE_CLI_HW_ESP             0
+#define _USE_CLI_HW_SAI             1
+#define _USE_CLI_HW_ESP             1
 #define _USE_CLI_HW_BUTTON          0
-#define _USE_CLI_HW_ADC             0
+#define _USE_CLI_HW_ADC             1
 #define _USE_CLI_HW_USB             1
 #define _USE_CLI_HW_PSRAM           1
 

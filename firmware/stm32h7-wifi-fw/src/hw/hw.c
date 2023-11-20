@@ -49,7 +49,7 @@ bool hwInit(void)
 
   sdInit();
   fatfsInit();
-  // saiInit();
+  saiInit();
   espInit();
   
   usbInit();

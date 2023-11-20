@@ -99,6 +99,7 @@ bool saiCfgLoad(void)
 {
   bool ret = true;
 
+  #ifdef _USE_HW_NVS
   if (nvsGet(SAI_CFG_NAME, &sai_cfg, sizeof(sai_cfg)) == true)
   {
     sai_volume = sai_cfg.volume;
@@ -109,6 +110,7 @@ bool saiCfgLoad(void)
     ret = nvsSet(SAI_CFG_NAME, &sai_cfg, sizeof(sai_cfg));
     logPrintf("[NG] saiCfgLoad()\n");
   }
+  #endif
 
   saiSetVolume(sai_cfg.volume);
   return ret;
@@ -119,8 +121,11 @@ bool saiCfgSave(void)
   bool ret = true;
 
   sai_cfg.volume = sai_volume;
-  ret = nvsSet(SAI_CFG_NAME, &sai_cfg, sizeof(sai_cfg));
 
+  #ifdef _USE_HW_NVS
+  ret = nvsSet(SAI_CFG_NAME, &sai_cfg, sizeof(sai_cfg));
+  #endif
+  
   return ret;
 }
 

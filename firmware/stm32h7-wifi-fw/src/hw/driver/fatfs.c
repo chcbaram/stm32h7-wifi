@@ -22,7 +22,10 @@ bool fatfsInit(void)
 {
   bool ret = true;
 
-  assert(sdIsInit());
+  if (sdIsInit() == false)
+  {
+    return false;
+  };
 
   if(FATFS_LinkDriver(&SD_Driver, SDPath) == 0)
   {

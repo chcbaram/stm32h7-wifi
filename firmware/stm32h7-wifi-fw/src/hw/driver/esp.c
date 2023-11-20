@@ -60,9 +60,8 @@ bool espInit(void)
 
   qbufferCreate(&esp_resp.q_rx, &esp_resp.q_buf[0], 512);
 
-  espOpen(uart_ch, uart_baud);
+  ret = espOpen(uart_ch, uart_baud);
 
-  ret = espPing(100);
   logPrintf("[%s] espInit()\n", ret ? "OK":"NG");  
 
 #if CLI_USE(HW_ESP)
