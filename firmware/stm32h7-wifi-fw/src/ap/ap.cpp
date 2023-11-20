@@ -79,6 +79,16 @@ void cliQC(cli_args_t *args)
     
     cliPrintf("qc esp32 C3..%s\n", espPing(100) ? "OK" : "FAIL");
     
+    if (espPing(100))
+    {
+      cliPrintf("qc esp32 wifi list\n");
+      cliRunStr("esp at AT+CWMODE=3 100");
+      delay(100);
+      cliRunStr("esp log on");
+      cliRunStr("esp wifi list");
+    }
+    
+    
     ret = true;
   }
 
