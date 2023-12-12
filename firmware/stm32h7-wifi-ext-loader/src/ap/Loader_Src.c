@@ -19,7 +19,7 @@ int Init()
    
   if (hwInit() == true)
   {
-    // ledToggle(_DEF_LED1);
+    ledToggle(_DEF_LED1);
     ret = 1;
   }
 
