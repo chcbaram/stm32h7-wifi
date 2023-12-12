@@ -16,7 +16,7 @@
     {
       "label": "build",
       "type": "shell",
-      "command": "cmake --build build -j10",
+      "command": "cmake --build build -j20",
       "problemMatcher": [],
       "group": {
         "kind": "build",
