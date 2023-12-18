@@ -6,7 +6,7 @@
 #include "bsp.h"
 
 
-#define _DEF_FIRMWATRE_VERSION    "V231109R1"
+#define _DEF_FIRMWATRE_VERSION    "V231218R1"
 #define _DEF_BOARD_NAME           "STM32H7-WIFI-FW"
 
 
