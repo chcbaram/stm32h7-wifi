@@ -4,9 +4,6 @@
 
 #define QSPI_FW_ADDR   0x90000000
 
-typedef  void (*pFunction)(void);
-pFunction JumpToApplication;
-
 
 
 void apInit(void)
