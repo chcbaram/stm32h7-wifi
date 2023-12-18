@@ -408,7 +408,7 @@ uint8_t BSP_QSPI_Init(void)
 
 
   /* QSPI initialization */
-  /* ClockPrescaler set to 1, so QSPI clock = 112MHz / (1) = 112MHz */
+  /* ClockPrescaler set to 3, so QSPI clock = 280MHz / (3) = 93MHz */
   hqspi.Init.FifoThreshold       = 4;
   hqspi.Init.DualQuad            = HAL_OSPI_DUALQUAD_DISABLE;
   hqspi.Init.MemoryType          = HAL_OSPI_MEMTYPE_MICRON;
@@ -417,7 +417,7 @@ uint8_t BSP_QSPI_Init(void)
   hqspi.Init.FreeRunningClock    = HAL_OSPI_FREERUNCLK_DISABLE;
   hqspi.Init.ClockMode           = HAL_OSPI_CLOCK_MODE_0;
   hqspi.Init.WrapSize            = HAL_OSPI_WRAP_NOT_SUPPORTED;
-  hqspi.Init.ClockPrescaler      = 1;
+  hqspi.Init.ClockPrescaler      = 3;
   hqspi.Init.SampleShifting      = HAL_OSPI_SAMPLE_SHIFTING_HALFCYCLE;
   hqspi.Init.DelayHoldQuarterCycle = HAL_OSPI_DHQC_DISABLE;
   hqspi.Init.ChipSelectBoundary  = 0;

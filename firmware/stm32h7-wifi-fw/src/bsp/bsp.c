@@ -11,7 +11,6 @@ static void PeriphCommonClock_Config(void);
 
 bool bspInit(void)
 {
-while(1);
   #ifdef _USE_HW_CACHE
   SCB_EnableICache();
   SCB_EnableDCache();
@@ -28,7 +27,7 @@ while(1);
   __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
-  // bspMpuInit();
+  bspMpuInit();
 
   return true;
 }
@@ -136,7 +135,7 @@ void PeriphCommonClock_Config(void)
 
   /** Initializes the peripherals clock
   */
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_OSPI|RCC_PERIPHCLK_SPI2
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SPI2
                               |RCC_PERIPHCLK_CKPER;
   PeriphClkInitStruct.PLL2.PLL2M = 5;
   PeriphClkInitStruct.PLL2.PLL2N = 112;

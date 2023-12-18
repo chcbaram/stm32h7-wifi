@@ -14,6 +14,7 @@ extern "C" {
 
 bool bspInit(void);
 void bspDeInit(void);
+void bspMpuInit(void);
 
 void logPrintf(const char *fmt, ...);
 void delay(uint32_t time_ms);

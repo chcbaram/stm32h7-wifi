@@ -4,7 +4,8 @@
 
 #define QSPI_FW_ADDR   0x90000000
 
-
+typedef  void (*pFunction)(void);
+pFunction JumpToApplication;
 
 
 
@@ -19,11 +20,8 @@ void apInit(void)
       logPrintf("[OK] Jump To Firmware\n");
       delay(10);
       bspDeInit();
-      volatile uint32_t test;
-      test = (uint32_t)(*jump_func);
-
        __set_MSP(*(__IO uint32_t*)QSPI_FW_ADDR);
-      (*jump_func)();
+      (*jump_func)();  
     }
   }
 

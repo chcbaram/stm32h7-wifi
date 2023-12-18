@@ -23,28 +23,7 @@
       ],     
       "runToEntryPoint": "main",
       "showDevDebugOutput": "none"
-    },
-    {
-      "cwd": "${workspaceRoot}",
-      "executable": "./build/stm32h7-wifi-fw.elf",
-      "name": "Debug with OpenOCD-STM",
-      "request": "launch",
-      "type": "cortex-debug",
-      "servertype": "openocd",
-      "windows": {
-        "serverpath": "./tools/openocd-stm/bin/openocd.exe",
-        "searchDir": [
-          "./tools/openocd-stm/share/openocd/scripts"
-        ],
-        "svdFile": "C:/ST/STM32CubeCLT/STMicroelectronics_CMSIS_SVD/STM32H7B0.svd"
-      },
-      "configFiles": [
-        "interface/stlink.cfg",
-        "target/stm32h7x.cfg"
-      ],     
-      "runToEntryPoint": "main",
-      "showDevDebugOutput": "none"
-    },    
+    }, 
     {
       "cwd": "${workspaceRoot}",
       "executable": "./build/stm32h7-wifi-fw.elf",
@@ -52,9 +31,10 @@
       "request": "launch",
       "type": "cortex-debug",
       "showDevDebugOutput": "none",      
+      "runToMain": true,
       "servertype": "stlink",
       "serverArgs": [
-        "--extload", "${workspaceFolder}/tools/stm32h7-wifi-ext-loader.stldr", "--external-init"        
+        "--external-init", "--extload", "${workspaceFolder}/tools/stm32h7-wifi-ext-loader.stldr" 
       ],
       "osx": {
         "serverpath": "/opt/ST/STM32CubeCLT/STLink-gdb-server/bin/ST-LINK_gdbserver",

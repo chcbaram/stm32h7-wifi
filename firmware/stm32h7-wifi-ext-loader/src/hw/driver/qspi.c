@@ -94,14 +94,9 @@ bool qspiReset(void)
 {
   bool ret = false;
 
-
-
-  if (is_init == true)
+  if (BSP_QSPI_Reset() == QSPI_OK)
   {
-    if (BSP_QSPI_Reset() == QSPI_OK)
-    {
-      ret = true;
-    }
+    ret = true;
   }
 
   return ret;

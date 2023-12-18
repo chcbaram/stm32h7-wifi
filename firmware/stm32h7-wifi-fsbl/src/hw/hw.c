@@ -32,6 +32,6 @@ bool hwInit(void)
   ledInit();
 
   qspiInit();
-
+  
   return true;
 }
