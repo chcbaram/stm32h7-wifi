@@ -49,8 +49,8 @@ bool hwInit(void)
   }
   spiInit();
   spiFlashInit();
-  // fsInit();
-  // nvsInit();
+  fsInit();
+  nvsInit();
   psramInit();
 
   sdInit();

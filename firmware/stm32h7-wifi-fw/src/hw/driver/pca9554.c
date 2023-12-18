@@ -204,7 +204,7 @@ void cliCmd(cli_args_t *args)
   {
     if (is_init)
     {
-      cliGui()->showCursor(false);
+      cliShowCursor(false);
       while(cliKeepLoop())
       {
         for (int i=0; i<PCA9554_MAX_PIN_CH; i++)
@@ -220,10 +220,10 @@ void cliCmd(cli_args_t *args)
             (int)pin_state);
         }  
         delay(100);
-        cliGui()->moveUp(PCA9554_MAX_PIN_CH);
+        cliMoveUp(PCA9554_MAX_PIN_CH);
       }
-      cliGui()->moveDown(PCA9554_MAX_PIN_CH);
-      cliGui()->showCursor(true);
+      cliMoveDown(PCA9554_MAX_PIN_CH);
+      cliShowCursor(true);
     }
     else
     {

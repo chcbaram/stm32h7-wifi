@@ -68,7 +68,7 @@ MEMORY
   BUF         (xrw) : ORIGIN = 0x24000000, LENGTH = 32K
   RAM         (xrw) : ORIGIN = 0x24008000, LENGTH = 1024K - 32K
 
-  FLASH       (rx)  : ORIGIN = 0x90000000, LENGTH = 1M
+  FLASH       (rx)  : ORIGIN = 0x90000000, LENGTH = 4M
 }
 
 /* Define output sections */

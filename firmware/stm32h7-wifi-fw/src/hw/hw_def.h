@@ -17,7 +17,7 @@
 #define _USE_HW_FATFS
 #define _USE_HW_QSPI
 #define _USE_HW_PCA9554
-// #define _USE_HW_NVS
+#define _USE_HW_NVS
 #define _USE_HW_SAI
 #define _USE_HW_FILES
 
@@ -77,8 +77,8 @@
 #define _USE_HW_SPI_FLASH
 #define      HW_SPI_FLASH_ADDR      0x91000000
 
-// #define _USE_HW_FS
-// #define      HW_FS_MAX_SIZE         (8*1024*1024)
+#define _USE_HW_FS
+#define      HW_FS_MAX_SIZE         (8*1024*1024)
 
 #define _USE_HW_PSRAM
 #define      HW_PSRAM_ADDR          0x92000000
@@ -101,21 +101,21 @@
 #define _USE_CLI_HW_LOG             1
 #define _USE_CLI_HW_ASSERT          1
 #define _USE_CLI_HW_RESET           1
-#define _USE_CLI_HW_EEPROM          0
-#define _USE_CLI_HW_GPIO            0
-#define _USE_CLI_HW_I2C             0
-#define _USE_CLI_HW_RTC             0
-#define _USE_CLI_HW_PCA9554         0
-#define _USE_CLI_HW_QSPI            0
-#define _USE_CLI_HW_SD              0
+#define _USE_CLI_HW_EEPROM          1
+#define _USE_CLI_HW_GPIO            1
+#define _USE_CLI_HW_I2C             1
+#define _USE_CLI_HW_RTC             1
+#define _USE_CLI_HW_PCA9554         1
+#define _USE_CLI_HW_QSPI            1
+#define _USE_CLI_HW_SD              1
 #define _USE_CLI_HW_BUZZER          1
-#define _USE_CLI_HW_UART            0
-#define _USE_CLI_HW_SPI_FLASH       0
+#define _USE_CLI_HW_UART            1
+#define _USE_CLI_HW_SPI_FLASH       1
 #define _USE_CLI_HW_FATFS           1
-#define _USE_CLI_HW_FS              0
+#define _USE_CLI_HW_FS              1
 #define _USE_CLI_HW_SAI             1
 #define _USE_CLI_HW_ESP             1
-#define _USE_CLI_HW_BUTTON          0
+#define _USE_CLI_HW_BUTTON          1
 #define _USE_CLI_HW_ADC             1
 #define _USE_CLI_HW_USB             1
 #define _USE_CLI_HW_PSRAM           1

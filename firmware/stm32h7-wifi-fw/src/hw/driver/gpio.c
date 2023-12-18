@@ -249,7 +249,7 @@ void cliGpio(cli_args_t *args)
   {
     uint16_t line = 0;
 
-    cliGui()->showCursor(false);
+    cliShowCursor(false);
     while(cliKeepLoop())
     {  
       line = 0;
@@ -269,7 +269,7 @@ void cliGpio(cli_args_t *args)
       cliPrintf("\x1B[%dA", line);
     }
     cliPrintf("\x1B[%dB", line);
-    cliGui()->showCursor(true);
+    cliShowCursor(true);
     ret = true;
   }
 
@@ -277,7 +277,7 @@ void cliGpio(cli_args_t *args)
   {
     uint16_t line = 0;
 
-    cliGui()->showCursor(false);
+    cliShowCursor(false);
     while(cliKeepLoop())
     {  
       line = 0;
@@ -297,7 +297,7 @@ void cliGpio(cli_args_t *args)
       cliPrintf("\x1B[%dA", line);
     }
     cliPrintf("\x1B[%dB", line);
-    cliGui()->showCursor(true);
+    cliShowCursor(true);
     ret = true;
   }
 
@@ -305,7 +305,7 @@ void cliGpio(cli_args_t *args)
   {
     uint16_t line = 0;
 
-    cliGui()->showCursor(false);
+    cliShowCursor(false);
     while(cliKeepLoop())
     {  
       line = 0;
@@ -325,7 +325,7 @@ void cliGpio(cli_args_t *args)
       cliPrintf("\x1B[%dA", line);
     }
     cliPrintf("\x1B[%dB", line);
-    cliGui()->showCursor(true);
+    cliShowCursor(true);
     ret = true;
   }
 
