@@ -2,6 +2,9 @@
 
 
 
+extern uint32_t _fw_flash_begin;
+
+
 
 
 
@@ -40,7 +43,10 @@ bool hwInit(void)
   buzzerInit();
   buttonInit();
 
-  qspiInit();
+  if ((uint32_t)&_fw_flash_begin < qspiGetAddr())
+  {
+    qspiInit();
+  }
   spiInit();
   spiFlashInit();
   // fsInit();

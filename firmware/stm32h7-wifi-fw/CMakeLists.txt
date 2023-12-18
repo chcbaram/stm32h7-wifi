@@ -121,7 +121,8 @@ target_compile_options(${EXECUTABLE} PRIVATE
   )
 
 target_link_options(${EXECUTABLE} PRIVATE
-  -T../src/bsp/ldscript/STM32H7B0VBTx_FLASH.ld
+  # -T../src/bsp/ldscript/STM32H7B0VBTx_FLASH.ld
+  -T../src/bsp/ldscript/STM32H7B0VBTx_QSPI.ld
 
   -mcpu=cortex-m7
   -mthumb

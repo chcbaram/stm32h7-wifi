@@ -11,7 +11,7 @@ static void PeriphCommonClock_Config(void);
 
 bool bspInit(void)
 {
-
+while(1);
   #ifdef _USE_HW_CACHE
   SCB_EnableICache();
   SCB_EnableDCache();
@@ -28,7 +28,7 @@ bool bspInit(void)
   __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
-  bspMpuInit();
+  // bspMpuInit();
 
   return true;
 }

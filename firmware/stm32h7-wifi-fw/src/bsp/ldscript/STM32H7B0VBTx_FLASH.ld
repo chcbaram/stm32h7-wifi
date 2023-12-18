@@ -74,6 +74,11 @@ MEMORY
 /* Define output sections */
 SECTIONS
 {
+  .fw_flash_begin :
+  {
+    _fw_flash_begin = .;
+  } >FLASH
+
   /* The startup code goes first into FLASH */
   .isr_vector :
   {
@@ -180,13 +185,13 @@ SECTIONS
   } >RAM
 
 
-  .non_cache :
+  .non_cache(NOLOAD) :
   {
     . = ALIGN(4);      
     *(.non_cache)
     *(.non_cache*)   
     . = ALIGN(4);       
-  } >BUF AT> FLASH   
+  } >BUF   
 
 
   .noinit(NOLOAD) :
@@ -196,7 +201,11 @@ SECTIONS
     . = ALIGN(4);
   } >NO_INIT
 
-  
+  .fw_flash_end :
+  {
+    _fw_flash_end = .;
+  } >FLASH
+    
   /* Remove information from the standard libraries */
   /DISCARD/ :
   {
