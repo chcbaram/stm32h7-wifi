@@ -241,6 +241,10 @@ uint8_t uartRead(uint8_t ch)
   }
   uart_tbl[ch].rx_cnt++;
 
+  if (ch == HW_ESP_UART_CH)
+  {
+    uartWrite(HW_LOG_CH, &ret, 1);
+  }
   return ret;
 }
 
@@ -267,6 +271,10 @@ uint32_t uartWrite(uint8_t ch, uint8_t *p_data, uint32_t length)
   }
   uart_tbl[ch].tx_cnt += ret;
 
+  if (ch == HW_ESP_UART_CH)
+  {
+    uartWrite(HW_LOG_CH, p_data, length);
+  }
   return ret;
 }
 

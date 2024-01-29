@@ -1,6 +1,5 @@
 #include "ap.h"
-
-
+#include "WiFi.h"
 
 
 
@@ -8,6 +7,14 @@
 void apInit(void)
 {  
   cliOpen(_DEF_UART1, 115200);
+  delay(500);
+
+  WiFi.init();
+
+  if (WiFi.status() == WL_NO_MODULE) 
+  {
+    logPrintf("Communication with WiFi module failed!\n");
+  }  
 }
 
 void apUpdate(void)
