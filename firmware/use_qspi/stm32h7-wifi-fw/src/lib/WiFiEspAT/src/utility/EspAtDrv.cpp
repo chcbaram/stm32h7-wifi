@@ -75,10 +75,30 @@ bool EspAtDrvClass::init(Stream* _serial, int8_t resetPin) {
   cmd = &debugPrint;
 #endif
   lastErrorCode = EspAtDrvError::NO_ERROR;
+  is_init = true;
   return reset(resetPin);
 }
 
-bool EspAtDrvClass::reset(int8_t resetPin) {
+bool EspAtDrvClass::init(uint32_t baud)
+{
+  serial = &esp_serial;
+  cmd = &esp_serial;
+  lastErrorCode = EspAtDrvError::NO_ERROR;
+  is_init = true;
+  return reset(MCU_ESP_RST, baud);
+}
+
+uint32_t EspAtDrvClass::getBaud(void)
+{
+  uint32_t ret = 115200;
+
+  if (is_init)
+    ret = esp_serial.baud();
+
+  return ret;
+}
+
+bool EspAtDrvClass::reset(int8_t resetPin, uint32_t baud) {
   maintain();
 
   LOG_INFO_PRINT_PREFIX();
@@ -93,6 +113,21 @@ bool EspAtDrvClass::reset(int8_t resetPin) {
     delay(1);
     gpioPinWrite(resetPin, _DEF_HIGH);
     readRX(PSTR("ready")); // can be missed
+
+    if (baud != 115200)
+    {
+      LOG_INFO_PRINT(F("baud change"));
+
+      simpleCommand(PSTR("ATE0"));
+      snprintf((char *)esp_buf, 256, "AT+UART_CUR=%d,8,1,0,0", (int)baud);
+      if (!simpleCommand((const char *)esp_buf))
+      {
+        LOG_INFO_PRINTLN(F(" - Fail"));
+        return false;
+      }
+      LOG_INFO_PRINTLN(F(" - OK"));
+      esp_serial.begin(baud);
+    }
   } else {
     cmd->print(F("AT+RST"));
     sendCommand(PSTR("ready")); // can be missed

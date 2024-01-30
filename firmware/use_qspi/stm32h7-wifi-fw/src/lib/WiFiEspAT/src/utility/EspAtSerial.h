@@ -24,6 +24,8 @@
 
 class EspAtSerial : public Stream {
   public:
+    EspAtSerial(uint8_t uart_ch) { uart_ch_ = uart_ch; };
+
     void begin(void);
     void begin(uint32_t);
     void begin(uint32_t, uint8_t);
@@ -64,8 +66,12 @@ class EspAtSerial : public Stream {
       MARK_PARITY = 3,
       SPACE_PARITY = 4,
     };
+
+  private:
+    uint8_t uart_ch_;
 };
 
 extern EspAtSerial esp_serial;
+extern EspAtSerial esp_log_serial;
 
 #endif 

@@ -55,10 +55,13 @@ struct LinkInfo {
 
 class EspAtDrvClass {
 public:
-
+  EspAtDrvClass() { is_init = false; };
+  
   bool init(Stream* serial, int8_t resetPin = -1);
+  bool init(uint32_t baud);
+  uint32_t getBaud(void);  
 
-  bool reset(int8_t resetPin = -1);
+  bool reset(int8_t resetPin = -1, uint32_t baud = 115200);
   void maintain();
   EspAtDrvError getLastErrorCode() {return lastErrorCode;}
   bool firmwareVersion(char* buff);
@@ -137,6 +140,9 @@ private:
   LinkInfo linkInfo[LINKS_COUNT];
   EspAtDrvError lastErrorCode = EspAtDrvError::NOT_INITIALIZED;
   unsigned long lastSyncMillis;
+  bool is_init;
+  uint32_t baud_;
+  uint8_t esp_buf[1024];
 
   uint8_t freeLinkId();
 

@@ -66,6 +66,8 @@ public:
   bool init(Stream& serial, int8_t resetPin = -1);
   bool init(Stream* serial, int8_t resetPin = -1); // old WiFiEsp lib compatibility
   bool init(void);
+  bool init(uint32_t baud);
+  uint32_t getBaud(void);
   
   uint8_t status();
 

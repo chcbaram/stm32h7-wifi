@@ -37,7 +37,7 @@
 #ifdef ARDUINO_SAM_ZERO // M0
 #define LOG_OUTPUT SerialUSB
 #else
-#define LOG_OUTPUT esp_serial
+#define LOG_OUTPUT esp_log_serial
 #endif
 
 #define LOG_ERROR_PREFIX "esp ERROR: "

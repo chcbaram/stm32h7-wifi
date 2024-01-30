@@ -43,6 +43,16 @@ bool WiFiClass::init(void) {
   return ok;
 }
 
+bool WiFiClass::init(uint32_t baud) {
+  bool ok = EspAtDrv.init(baud);
+  state = ok ? WL_IDLE_STATUS : WL_NO_MODULE;
+  return ok;
+}
+
+uint32_t WiFiClass::getBaud(void) {
+  return EspAtDrv.getBaud();
+}
+
 bool WiFiClass::setPersistent(bool persistent) {
   return EspAtDrv.sysPersistent(persistent);
 }

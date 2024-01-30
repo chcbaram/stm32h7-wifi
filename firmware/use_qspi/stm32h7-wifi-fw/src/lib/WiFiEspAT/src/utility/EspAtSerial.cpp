@@ -21,26 +21,27 @@
 // #include "wiring.h"
 #include "hw.h"
 
-EspAtSerial esp_serial;
+EspAtSerial esp_serial(HW_UART_CH_ESP);
+EspAtSerial esp_log_serial(HW_LOG_CH);
 
-static uint8_t uart_ch = HW_UART_CH_ESP;
+
 static bool dtrState = false;
 static bool rtsState = false;
 
 
 void EspAtSerial::begin(void)
 {
-  uartOpen(uart_ch, 115200);    
+  uartOpen(uart_ch_, 115200);    
 }
 
 void EspAtSerial::begin(uint32_t baud)
 {
-  uartOpen(uart_ch, baud);
+  uartOpen(uart_ch_, baud);
 }
 
 void EspAtSerial::begin(uint32_t baud, uint8_t /* config */)
 {
-  uartOpen(uart_ch, baud);
+  uartOpen(uart_ch_, baud);
 }
 
 void EspAtSerial::end()
@@ -62,21 +63,23 @@ size_t EspAtSerial::write(const uint8_t *buffer, size_t size)
 {
   size_t rest = size;
 
-  uartWrite(uart_ch, (uint8_t *)buffer, size);
+  uartWrite(uart_ch_, (uint8_t *)buffer, size);
 
   return size - rest;
 }
 
 int EspAtSerial::available(void)
 {
-  return uartAvailable(uart_ch);
+  return uartAvailable(uart_ch_);
 }
 
 int EspAtSerial::read(void)
 {
-  int ch;
+  int ch = -1;
 
-  ch = uartRead(uart_ch);
+  if (uartAvailable(uart_ch_) > 0)
+    ch = uartRead(uart_ch_);
+  
   return ch;
 }
 
@@ -128,12 +131,12 @@ int EspAtSerial::peek(void)
 
 void EspAtSerial::flush(void)
 {
-  uartFlush(uart_ch);
+  uartFlush(uart_ch_);
 }
 
 uint32_t EspAtSerial::baud()
 {
-  return uartGetBaud(uart_ch);
+  return uartGetBaud(uart_ch_);
 }
 
 uint8_t EspAtSerial::stopbits()
