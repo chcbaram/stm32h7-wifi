@@ -12,3 +12,5 @@ _deps
 firmware/stm32h7-wifi-fw/build/
 firmware/exam/EX-02-UART/build/
 firmware/exam/EX-03-CLI/build/
+firmware/use_flash/stm32h7-wifi-fw/build/
+firmware/use_qspi/stm32h7-wifi-fw/build/

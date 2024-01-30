@@ -47,6 +47,8 @@ file(GLOB_RECURSE SRC_FILES_RECURSE CONFIGURE_DEPENDS
   src/common/*.c
   src/hw/*.c
   src/lib/ST/STM32H7xx_HAL_Driver/Src/*.c
+
+  src/lib/WiFiEspAT/*.cpp
 )
 
 # 특정 폴더를 빌드에서 제외한다.
@@ -74,6 +76,7 @@ add_executable(${EXECUTABLE}
 target_include_directories(${EXECUTABLE} PRIVATE 
   src  
   src/ap
+  src/ap/modules
   src/bsp
   src/bsp/device
   src/common 
@@ -97,6 +100,11 @@ target_include_directories(${EXECUTABLE} PRIVATE
   src/hw/driver/usb/usb_cdc
   src/hw/driver/usb/usb_msc
   src/lib/ST/STM32_USB_Device_Library/Core/Inc
+
+
+  # WiFiEspAT
+  src/lib/WiFiEspAT/src/core
+  src/lib/WiFiEspAT/src
 )
 
 target_compile_definitions(${EXECUTABLE} PRIVATE

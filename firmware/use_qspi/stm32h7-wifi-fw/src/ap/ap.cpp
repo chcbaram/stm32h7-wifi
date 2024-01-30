@@ -1,13 +1,13 @@
 #include "ap.h"
-
-
+#include "wifi/wifi.h" 
 
 
 
 
 void apInit(void)
-{  
+{ 
   cliOpen(_DEF_UART1, 115200);
+  wifiInit();  
 }
 
 void apUpdate(void)
@@ -33,5 +33,4 @@ void apMain(void)
     apUpdate();
   }
 }
-
 
