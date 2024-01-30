@@ -221,9 +221,10 @@ void cliWifi(cli_args_t *args)
           }
           // close the connection:
           client.stop();
-          cliPrintf("client disconnected\n");
+          cliPrintf("client disconnected\n");          
         }
       }
+      server.end();
     }
     ret = true;
   }
